@@ -1,7 +1,7 @@
 ---
 title: "groniz analytics: platform and post metric commands"
-sidebarTitle: "analytics"
-description: "Reference for groniz analytics platform (channel-level metrics with date range) and analytics post (post-level metrics). Covers which platforms report analytics and which do not."
+sidebarTitle: "Analytics"
+description: "Reference for groniz analytics platform (channel-level metrics, date range) and analytics post (single-post metrics and release ID workflow)."
 ---
 
 The `groniz analytics` command group retrieves performance data from your connected channels. Use `platform` for aggregate channel-level metrics over a date range, and `post` for impression and engagement data on a specific published post. Analytics require a valid release ID on the post — see the [release ID section](#release-id-requirement) below if metrics are unavailable.
@@ -14,11 +14,11 @@ Returns platform-level metrics for a connected channel over a specified date win
   The ID of the integration to pull metrics for. Obtain IDs from `groniz integrations list`.
 </ParamField>
 
-<ParamField query="--from" type="string" required>
+<ParamField query="--from" type="string">
   Start of the reporting window (ISO 8601 date, e.g. `2025-08-01`).
 </ParamField>
 
-<ParamField query="--to" type="string" required>
+<ParamField query="--to" type="string">
   End of the reporting window (ISO 8601 date, e.g. `2025-08-31`).
 </ParamField>
 

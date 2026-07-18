@@ -1,22 +1,22 @@
 ---
 title: "Groniz CLI: Schedule Social Posts from Any AI Agent"
 sidebarTitle: "Home"
-description: "Groniz CLI lets AI agents post and schedule to 32+ social networks. Install the skill in one command, then drive the CLI from Claude Code, Codex, or any shell-capable agent."
+description: "Groniz CLI lets AI agents post to 32+ social networks. Install the skill in one command, then drive the CLI from Claude Code, Cline, Cursor, or OpenCode."
 ---
 
 The Groniz CLI is a self-contained native binary that lets you — and your AI coding agents — schedule social media posts across 32+ channels from the terminal. This skill package teaches agents exactly how to use it correctly, covering the authentication flow, media upload requirements, and per-platform settings discovery that `--help` alone cannot convey.
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="bolt" href="/quickstart">
+  <Card title="Quickstart" icon="bolt" href="quickstart">
     From zero to your first scheduled post in under five minutes.
   </Card>
-  <Card title="Installation" icon="download" href="/installation">
+  <Card title="Installation" icon="download" href="installation">
     Install the CLI binary and the agent skill with one command each.
   </Card>
-  <Card title="Agent Skills" icon="robot" href="/skills/overview">
-    How to install the skill for Claude Code, Codex, Cline, Cursor, and more.
+  <Card title="Agent Skills" icon="robot" href="skills/overview">
+    How to install the skill for Claude Code, Cline, Cursor, and OpenCode.
   </Card>
-  <Card title="Command Reference" icon="terminal" href="/commands/auth">
+  <Card title="Command Reference" icon="terminal" href="commands/auth">
     Full reference for every CLI command, subcommand, and flag.
   </Card>
 </CardGroup>
@@ -27,7 +27,7 @@ The Groniz CLI already documents every flag via `groniz --help`. This skill cove
 
 <Steps>
   <Step title="Authenticate first">
-    Every command fails without credentials. `groniz auth login` runs the OAuth2 device flow and saves a token to `~/.groniz/credentials.json` that survives across shells and agent restarts — unlike a bare `export`.
+    Every command fails without credentials. Run `groniz auth login` to complete the OAuth2 device flow — credentials are saved to `~/.groniz/credentials.json` and survive across shells and agent restarts, unlike a bare `export GRONIZ_API_KEY` which only lasts for the current shell.
   </Step>
   <Step title="Upload media before posting">
     Raw file paths and external URLs are rejected server-side. Run `groniz upload <file>` first; pass the returned `.path` value into the post payload.
@@ -45,16 +45,16 @@ The Groniz CLI already documents every flag via `groniz --help`. This skill cove
 Groniz posts to 32+ networks, including X, LinkedIn, Instagram, Facebook, Threads, TikTok, YouTube, Reddit, Pinterest, Bluesky, Mastodon, Telegram, Discord, Slack, Medium, Dev.to, Hashnode, WordPress, and more.
 
 <CardGroup cols={2}>
-  <Card title="Using the CLI" icon="code" href="/cli/posts">
+  <Card title="Using the CLI" icon="code" href="cli/posts">
     Create, schedule, list, and delete posts from the command line.
   </Card>
-  <Card title="Managing Integrations" icon="plug" href="/cli/integrations">
+  <Card title="Managing Integrations" icon="plug" href="cli/integrations">
     List connected channels and inspect per-platform settings schemas.
   </Card>
-  <Card title="Media Upload" icon="image" href="/cli/media-upload">
+  <Card title="Media Upload" icon="image" href="cli/media-upload">
     Upload images and video before referencing them in post payloads.
   </Card>
-  <Card title="Analytics" icon="chart-bar" href="/cli/analytics">
+  <Card title="Analytics" icon="chart-bar" href="cli/analytics">
     Read platform and post-level analytics directly from the CLI.
   </Card>
 </CardGroup>

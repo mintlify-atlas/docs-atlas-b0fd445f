@@ -1,7 +1,7 @@
 ---
 title: "Create, schedule, and manage posts with the Groniz CLI"
 sidebarTitle: "Posts"
-description: "Use groniz posts create, list, delete, and connect to schedule content across 32+ social channels, post threads, and link posts to their published release IDs."
+description: "Use groniz posts create, list, and delete to manage content across 32+ channels, build thread chains, and link posts to release IDs for analytics."
 ---
 
 The `groniz posts` commands are the primary way to create and manage content across your connected social channels. This page covers creating immediate and scheduled posts, building thread chains, working with drafts, and resolving missing release IDs that block analytics.
@@ -41,6 +41,17 @@ groniz posts create -c "Cross-post content" \
 # Comma-separated
 groniz posts create -c "Cross-post content" \
   -i "x-integration-id,linkedin-integration-id,instagram-integration-id"
+```
+
+### JSON mode
+
+Pass `--json` to supply a full JSON payload for the post, which is required when attaching media or setting platform-specific fields beyond the basic flags.
+
+```bash
+groniz posts create \
+  -c "Post with an image" \
+  -i "integration-id" \
+  --json '{"images": [{"id": "img_7a2b3c4d", "path": "https://cdn.groniz.com/uploads/img_7a2b3c4d/image.jpg"}]}'
 ```
 
 ### JSON output
@@ -150,7 +161,11 @@ Example output:
 ]
 ```
 
-You can filter by date range — run `groniz posts list --help` to see available flags.
+Filter by date range with the `--from` and `--to` flags, each accepting an ISO 8601 date:
+
+```bash
+groniz posts list --from "2025-01-01" --to "2025-01-31"
+```
 
 ---
 
@@ -178,13 +193,13 @@ groniz posts missing <post-id>
 
 ### Connect a post to its release ID
 
-Once you've identified the correct release ID from the output above, use `posts connect` to link the post:
+Once you've identified the correct release ID from the output above, use `posts connect` with `--post-id` and `--release-id` to link the post:
 
 ```bash
-groniz posts connect
+groniz posts connect --post-id "post_abc123" --release-id "release-id-from-platform"
 ```
 
-Follow the interactive prompt (or supply flags — run `groniz posts connect --help`) to complete the connection. After connecting, analytics commands will return data for that post.
+After connecting, analytics commands will return data for that post.
 
 <Note>
   See [Analytics](/cli/analytics) for details on which platforms support analytics and what metrics are available.

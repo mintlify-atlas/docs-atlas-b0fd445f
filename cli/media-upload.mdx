@@ -1,7 +1,7 @@
 ---
-title: "Upload media before posting with groniz upload"
+title: "Upload media before posting with the groniz upload command"
 sidebarTitle: "Media Upload"
-description: "Upload images and video with groniz upload before referencing them in posts. Raw paths and external URLs are rejected — only uploaded .path values are accepted."
+description: "Upload images and video with groniz upload before posting. Raw paths and external URLs are rejected — use the .path from the upload response in posts."
 ---
 
 Before you can attach media to a post, you must upload it through `groniz upload`. The Groniz server validates every media reference at post-creation time — raw local file paths and external URLs are rejected outright. The upload step returns a JSON object with an `id` and a `path`; only that `path` value is accepted in the post's image array.
@@ -105,18 +105,6 @@ groniz posts create \
     ```
   </Step>
 </Steps>
-
----
-
-## Uploading from a URL
-
-Groniz also supports uploading media directly from a remote URL, which saves you from downloading the file locally first:
-
-```bash
-groniz upload "https://example.com/source-image.jpg"
-```
-
-The response format is identical — you'll receive an `id` and a `path` to use in your post. The same rule applies: use the returned `.path`, not the original source URL.
 
 ---
 

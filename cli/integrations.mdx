@@ -1,7 +1,7 @@
 ---
 title: "List channels and inspect settings with groniz integrations"
 sidebarTitle: "Integrations"
-description: "Use groniz integrations list and settings to discover connected social accounts, retrieve integration IDs, and inspect per-platform required fields and character limits."
+description: "Use groniz integrations list and settings to find connected channels, get integration IDs, and inspect per-platform required fields and character limits."
 ---
 
 In the Groniz CLI, **integrations** and **channels** refer to the same thing — a connected social account or platform. The CLI uses the term `integrations`; the Groniz web UI calls them channels. Every post command requires an integration ID, and every platform has its own required fields, character limits, and options. Rather than hardcoding those assumptions, the CLI gives you `integrations settings` as the authoritative source of truth at runtime.
@@ -112,13 +112,16 @@ This is the only reliable way to know what a platform needs. Settings vary signi
 
 ## Triggering integration tools
 
-Some integrations expose dynamic tools — platform-specific actions beyond standard posting. Use `groniz integrations trigger` to invoke them.
+Some integrations expose dynamic tools — platform-specific actions beyond standard posting. Use `groniz integrations trigger` to invoke them. Pass the integration ID, the tool name, and a JSON string of parameters:
 
 ```bash
-groniz integrations trigger
+groniz integrations trigger \
+  --integration-id "integration-id" \
+  --tool "tool-name" \
+  --params '{"key": "value"}'
 ```
 
-Run `groniz integrations trigger --help` for available flags and options. Triggerable tools vary by provider.
+The `--params` value must be a valid JSON string. Available tools vary by provider.
 
 ---
 

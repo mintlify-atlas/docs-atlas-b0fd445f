@@ -1,10 +1,10 @@
 ---
-title: "groniz upload: upload media files before posting"
-sidebarTitle: "upload"
-description: "Reference for groniz upload — uploads local images and video to Groniz and returns an id and path. The path value is required when attaching media to posts."
+title: "groniz upload: media upload and CLI update commands"
+sidebarTitle: "Upload"
+description: "Reference for groniz upload (images and video) and groniz update (CLI version management). Covers supported formats and the update check exit codes."
 ---
 
-Before attaching any image or video to a post, you must upload the file through `groniz upload`. The command transfers the local file to Groniz's media storage and returns a hosted URL. That URL — the `.path` field in the response — is what you pass when creating a post. Raw local file paths and external URLs are rejected by the API.
+Before attaching any image or video to a post, you must upload the file through `groniz upload`. The command transfers the local file to Groniz's media storage and returns a JSON object with `id` and `path` fields. The `.path` value is what you pass when creating a post. Raw local file paths and external URLs are rejected server-side with a `400` error.
 
 ## `groniz upload <file>`
 

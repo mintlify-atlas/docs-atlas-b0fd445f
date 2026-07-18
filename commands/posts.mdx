@@ -1,7 +1,7 @@
 ---
 title: "groniz posts: create, list, delete, and connect commands"
-sidebarTitle: "posts"
-description: "Full reference for groniz posts create (schedule or post now), list (filter by date), delete (by ID), missing (find release IDs), and connect (link to published content)."
+sidebarTitle: "Posts"
+description: "Reference for groniz posts: create posts, schedule them, list by date, delete by ID, find missing release IDs, and link posts to published content."
 ---
 
 The `groniz posts` command group is the core of the CLI. Use it to create scheduled or immediate posts across any of your connected channels, list existing posts, delete them, and resolve the release-ID link that enables per-post analytics.
@@ -10,23 +10,23 @@ The `groniz posts` command group is the core of the CLI. Use it to create schedu
 
 Creates a new post. By default the post is published immediately to every integration you specify. Pass `--schedule` to queue it for a future time, or `--draft` to save it without validation.
 
-<ParamField body="-c, --content" type="string" required>
+<ParamField query="-c, --content" type="string" required>
   The text content of the post. Repeat the flag once per item to create a thread — each `-c` value becomes one thread post in order.
 </ParamField>
 
-<ParamField body="-s, --schedule" type="string">
+<ParamField query="-s, --schedule" type="string">
   ISO 8601 datetime at which to publish the post (e.g. `2025-09-01T14:00:00Z`). Omit this flag to post immediately.
 </ParamField>
 
-<ParamField body="-i, --integrations" type="string" required>
+<ParamField query="-i, --integrations" type="string" required>
   Integration ID to post to. Repeat the flag or comma-separate multiple IDs to post to more than one channel simultaneously.
 </ParamField>
 
-<ParamField body="--draft" type="boolean">
+<ParamField query="--draft" type="boolean">
   Save the post as a draft. Validation is skipped, so platform-specific requirements (character limits, required settings) are not enforced.
 </ParamField>
 
-<ParamField body="--json" type="boolean">
+<ParamField query="--json" type="boolean">
   Strict JSON mode. Instead of individual flags, pass the full post payload as a JSON string. Useful when constructing posts programmatically.
 </ParamField>
 
@@ -135,11 +135,11 @@ The output is a JSON array of available published items from the provider, each 
 
 Links a Groniz post to its published content using a release ID. Once connected, `groniz analytics post` can return metrics for that post.
 
-<ParamField body="--post-id" type="string" required>
+<ParamField query="--post-id" type="string" required>
   The Groniz post ID to link.
 </ParamField>
 
-<ParamField body="--release-id" type="string" required>
+<ParamField query="--release-id" type="string" required>
   The release ID returned by `groniz posts missing` that corresponds to the published item.
 </ParamField>
 

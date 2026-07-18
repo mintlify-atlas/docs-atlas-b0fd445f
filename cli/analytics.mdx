@@ -1,14 +1,14 @@
 ---
-title: "Read social media analytics from the Groniz CLI"
+title: "Retrieve social media analytics with the Groniz CLI"
 sidebarTitle: "Analytics"
-description: "Use groniz analytics platform and analytics post to retrieve engagement metrics. Analytics availability varies by network — not all platforms report back."
+description: "Pull engagement metrics with groniz analytics platform and post. Supported networks: X, Instagram, Facebook, Threads, LinkedIn Pages, and Pinterest."
 ---
 
 The Groniz CLI can pull engagement metrics for both individual posts and entire channels (integrations). Not every platform exposes analytics — some networks don't provide an API for it at all, and others restrict what's available depending on the account type. This page explains what's available, how to query it, and what to do when analytics aren't showing up.
 
 ## Platform analytics
 
-Use `groniz analytics platform` to retrieve metrics for a connected channel over a date range. Pass the integration ID and `--from` / `--to` dates to scope the results.
+Use `groniz analytics platform` to retrieve metrics for a connected channel. The `--integration-id` flag is required. Use the optional `--from` and `--to` flags to scope results to a date range.
 
 ```bash
 groniz analytics platform \
@@ -89,7 +89,7 @@ Analytics support varies by network. The table below shows which platforms repor
 |---|---|
 | **X** | Impressions, likes, retweets, replies, quotes, bookmarks |
 | **Instagram** | Views, reach, likes, comments, shares, saves |
-| **LinkedIn** | Impressions, engagement *(Pages only — not personal profiles)* |
+| **LinkedIn Pages** | Available *(Pages only — personal profiles not supported)* |
 | **Facebook** | Impressions, clicks, reactions, engagement |
 | **Threads** | Views, likes, replies, reposts, quotes |
 | **Pinterest** | Impressions, pin clicks, outbound clicks, saves |
@@ -126,13 +126,13 @@ groniz posts missing <post-id>
 
 ### Connect the post to its release ID
 
-Once you've identified the correct match, use `groniz posts connect` to link the post:
+Once you've identified the correct match, use `groniz posts connect` with `--post-id` and `--release-id` to link the post:
 
 ```bash
-groniz posts connect
+groniz posts connect --post-id "post_abc123" --release-id "release-id-from-platform"
 ```
 
-Follow the interactive prompt (or pass flags — run `groniz posts connect --help`) to complete the connection. After connecting, analytics will be available for that post.
+After connecting, analytics will be available for that post.
 
 <Warning>
   Posts created with the `--draft` flag skip server-side validation and may not have a release ID assigned when they are eventually published. If analytics are returning empty for a post, check whether it has a release ID and use `posts missing` + `posts connect` to resolve it.

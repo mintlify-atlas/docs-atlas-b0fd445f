@@ -1,7 +1,7 @@
 ---
 title: "Groniz skill for Codex, Cline, Cursor, opencode, and more"
 sidebarTitle: "Other Agents"
-description: "Install the Groniz CLI skill for OpenAI Codex, Cline, Cursor, opencode, ChatGPT, and other skill-aware agents to enable social media posting from any coding agent."
+description: "Install the Groniz CLI skill for Codex, Cline, Cursor, opencode, and ChatGPT to enable social media posting from any skill-aware coding agent."
 ---
 
 The Groniz agent skill installs the same way across all supported agents — one command, no manual configuration. The differences between agents come down to where the skill file is placed and whether the agent also supports the Groniz MCP server as an alternative transport. This page covers every agent other than Claude Code, which has [its own setup guide](/skills/claude-code).
@@ -36,13 +36,18 @@ Select your agent below for specific install paths, MCP instructions, and any pe
 
     ### MCP setup
 
-    Codex supports MCP via `~/.codex/config.toml`. Add the Groniz server with:
+    Codex supports MCP via `~/.codex/config.toml`. Add the Groniz server by editing that file directly:
 
-    ```bash
-    codex mcp add --url https://mcp.groniz.com/mcp --bearer-token-env-var GRONIZ_API_KEY
+    ```toml
+    [[mcp_servers]]
+    name = "groniz"
+    url  = "https://mcp.groniz.com/mcp"
+
+    [mcp_servers.headers]
+    Authorization = "Bearer YOUR_API_KEY"
     ```
 
-    This adds an entry to your Codex config that passes `GRONIZ_API_KEY` from your environment as the Bearer token on every MCP request.
+    Replace `YOUR_API_KEY` with your Groniz API key. Codex will pass the Authorization header on every MCP request.
 
     <Warning>
       The `GRONIZ_API_KEY` environment variable **must be set before Codex launches**. Codex reads environment variables at startup and will not pick up changes made after it is running. Add the export to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) so it is always present when you open a new terminal.

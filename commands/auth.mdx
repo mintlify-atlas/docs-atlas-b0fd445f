@@ -1,7 +1,7 @@
 ---
-title: "groniz auth: login, logout, and whoami commands"
-sidebarTitle: "auth"
-description: "Reference for groniz auth login (OAuth2 device flow), auth logout (remove credentials), and whoami (verify current session). Credentials stored in ~/.groniz/credentials.json."
+title: "groniz auth: login, logout, and whoami CLI commands"
+sidebarTitle: "Auth"
+description: "Reference for auth login (OAuth2 device flow), auth logout (delete credentials), and whoami (return current user id, email, and name)."
 ---
 
 The `groniz auth` command group handles authentication with the Groniz platform. Use `auth login` to start an OAuth2 device flow and store credentials locally, `auth logout` to remove them, and `whoami` to confirm which account the CLI is currently acting as.
@@ -31,8 +31,9 @@ Credentials are written to `~/.groniz/credentials.json` and are read automatical
 ```json
 {
   "status": "authenticated",
-  "username": "yourhandle",
-  "email": "you@example.com"
+  "id": "usr_abc123",
+  "email": "you@example.com",
+  "name": "Your Name"
 }
 ```
 
@@ -64,8 +65,9 @@ groniz whoami
 
 ```json
 {
-  "username": "yourhandle",
-  "email": "you@example.com"
+  "id": "usr_abc123",
+  "email": "you@example.com",
+  "name": "Your Name"
 }
 ```
 

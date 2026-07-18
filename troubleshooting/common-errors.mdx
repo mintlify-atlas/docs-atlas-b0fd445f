@@ -1,7 +1,7 @@
 ---
 title: "Troubleshoot Groniz CLI errors and common failures"
 sidebarTitle: "Common Errors"
-description: "Fix the most common Groniz CLI errors: 400 bad request, 401 unauthorized, 413 payload too large, 429 rate limit, upload rejections, and agent credential issues."
+description: "Fix common Groniz CLI errors: 400, 401, 403, 404, 413, 429, 500, upload rejections, and agent credential issues — each with a clear cause and fix."
 ---
 
 Groniz CLI errors fall into three broad categories: HTTP errors returned by the Groniz API, authentication and credential failures that prevent any command from reaching the API, and platform-specific rejections tied to how media or channel settings are validated. Understanding which layer the error comes from narrows down the fix quickly — most failures have a clear root cause and a one-step resolution.
@@ -70,6 +70,25 @@ Groniz CLI errors fall into three broad categories: HTTP errors returned by the 
       --channel <id1> --message "First post" --schedule-at "2025-08-01T09:00:00Z" \
       --channel <id2> --message "Second post" --schedule-at "2025-08-01T10:00:00Z"
     ```
+  </Accordion>
+
+  <Accordion title="500 Internal Server Error">
+    A 500 response usually indicates a real server fault and should be retried with exponential backoff. However, there is one known exception: a missing post ID on a DELETE request sometimes surfaces as a 500 instead of the expected 404.
+
+    **Known bug — DELETE with missing post ID:** If you receive a 500 on a DELETE endpoint, inspect the response body before retrying. If the body references a missing or not-found record for the given ID, treat it the same as a 404 — the resource is already absent and no further action is needed.
+
+    ```bash
+    # Capture both the status code and body to distinguish the cases
+    curl -s -o response.json -w "%{http_code}" \
+      -X DELETE https://api.groniz.com/v1/posts/<post-id> \
+      -H "Authorization: Bearer $GRONIZ_API_KEY"
+
+    cat response.json | jq '.'
+    ```
+
+    <Warning>
+      Only apply the "treat 500 as 404" logic to DELETE endpoints where the response body matches the known missing-record signature. All other 500 errors are real server errors — retry with backoff and do not ignore them.
+    </Warning>
   </Accordion>
 </AccordionGroup>
 

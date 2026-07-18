@@ -1,10 +1,10 @@
 ---
-title: "Groniz agent skills: teach your AI agent to post"
+title: "Groniz agent skills: teach your AI to post reliably"
 sidebarTitle: "Overview"
-description: "The Groniz CLI agent skill installs in one command and teaches Claude Code, Codex, Cline, Cursor, and opencode to post, schedule, and manage social media channels."
+description: "The Groniz skill installs in one command and teaches Claude Code, Codex, Cline, Cursor, opencode, and ChatGPT to post and schedule across 28+ channels."
 ---
 
-Agent skills are small instruction files that live inside your project and tell a coding agent how to use a CLI tool correctly. The Groniz skill teaches Claude Code, Codex, Cline, Cursor, opencode, ChatGPT, and other skill-aware agents how to authenticate, upload media, discover channel settings at runtime, and avoid the traps that `groniz --help` alone cannot warn against — so your agent can schedule posts across 32+ channels without guesswork or avoidable failures.
+Agent skills are small instruction files that live inside your project and tell a coding agent how to use a CLI tool correctly. The Groniz skill teaches Claude Code, Codex, Cline, Cursor, opencode, ChatGPT, and other skill-aware agents how to authenticate, upload media, discover channel settings at runtime, and avoid the traps that `groniz --help` alone cannot warn against — so your agent can schedule posts across 28+ channels without guesswork or avoidable failures.
 
 ## Install in one command
 
@@ -27,7 +27,7 @@ npx skills add groniz/groniz-cli -a claude-code -a opencode
 | Claude Code | `.claude/skills/` |
 | Cline | `.agents/skills/` |
 | Cursor | `.agents/skills/` |
-| OpenCode | `.agents/skills/` |
+| opencode | `.agents/skills/` |
 | Codex | `.agents/skills/` |
 | ChatGPT | `.agents/skills/` |
 
@@ -48,7 +48,7 @@ The skill covers what `groniz --help` cannot: the four things every agent needs 
     Required fields and character limits vary by integration and account configuration. The skill instructs agents to call `groniz integrations settings <id>` to retrieve the source-of-truth settings for any channel before composing a post, rather than hardcoding platform assumptions.
   </Step>
   <Step title="Avoid common traps">
-    The skill documents four failure patterns that `--help` does not explain: the strict JSON mode shape required by the `--json` flag, differing `jq` paths across output types, thread chaining via repeated `-c` flags, draft behavior that skips server-side validation, and the missing release ID that leaves post analytics unavailable.
+    The skill documents five failure patterns that `--help` does not explain: the strict JSON mode shape required by the `--json` flag, differing `jq` paths across output types, thread chaining via repeated `-c` flags, draft behavior that skips server-side validation, and the missing release ID that leaves post analytics unavailable.
   </Step>
 </Steps>
 
