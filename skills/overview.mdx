@@ -1,0 +1,80 @@
+---
+title: "Groniz agent skills: teach your AI agent to post"
+sidebarTitle: "Overview"
+description: "The Groniz CLI agent skill installs in one command and teaches Claude Code, Codex, Cline, Cursor, and opencode to post, schedule, and manage social media channels."
+---
+
+Agent skills are small instruction files that live inside your project and tell a coding agent how to use a CLI tool correctly. The Groniz skill teaches Claude Code, Codex, Cline, Cursor, opencode, ChatGPT, and other skill-aware agents how to authenticate, upload media, discover channel settings at runtime, and avoid the traps that `groniz --help` alone cannot warn against — so your agent can schedule posts across 32+ channels without guesswork or avoidable failures.
+
+## Install in one command
+
+Run this from the root of any project where you want agent support:
+
+```bash
+npx skills add groniz/groniz-cli
+```
+
+The `skills` CLI detects which agent you are using and installs the skill file into the right directory automatically. To skip the detection prompt and target specific agents, name them with the `-a` flag:
+
+```bash
+npx skills add groniz/groniz-cli -a claude-code -a opencode
+```
+
+### Where the skill file is installed
+
+| Agent | Install location |
+|---|---|
+| Claude Code | `.claude/skills/` |
+| Cline | `.agents/skills/` |
+| Cursor | `.agents/skills/` |
+| OpenCode | `.agents/skills/` |
+| Codex | `.agents/skills/` |
+| ChatGPT | `.agents/skills/` |
+
+Each agent reads its skills directory automatically — no further configuration is required after install.
+
+## What agents learn
+
+The skill covers what `groniz --help` cannot: the four things every agent needs to know before it can post reliably.
+
+<Steps>
+  <Step title="Authenticate first">
+    `groniz auth login` stores your API token in `~/.groniz/credentials.json`. This credential survives across shells and agent restarts, unlike `export`, which disappears when a session ends. Every command fails without valid credentials, so the skill instructs agents to verify authentication before attempting anything else.
+  </Step>
+  <Step title="Upload media before posting">
+    Raw file paths and external URLs are rejected server-side. The skill tells agents to always run `groniz upload` first and pass the returned `.path` value to the post command. Skipping this step produces a 400 error that is not obvious from `--help` alone.
+  </Step>
+  <Step title="Discover channel settings at runtime">
+    Required fields and character limits vary by integration and account configuration. The skill instructs agents to call `groniz integrations settings <id>` to retrieve the source-of-truth settings for any channel before composing a post, rather than hardcoding platform assumptions.
+  </Step>
+  <Step title="Avoid common traps">
+    The skill documents four failure patterns that `--help` does not explain: the strict JSON mode shape required by the `--json` flag, differing `jq` paths across output types, thread chaining via repeated `-c` flags, draft behavior that skips server-side validation, and the missing release ID that leaves post analytics unavailable.
+  </Step>
+</Steps>
+
+## Supported agents
+
+<CardGroup cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/skills/claude-code">
+    Install via skill or MCP. The skill drops into `.claude/skills/` and is read automatically. MCP is also supported with a paid Claude plan.
+  </Card>
+  <Card title="Codex" icon="code" href="/skills/other-agents">
+    Install via skill into `.agents/skills/`, or connect via MCP using `~/.codex/config.toml`. The `GRONIZ_API_KEY` env var must be set before Codex launches.
+  </Card>
+  <Card title="Cline" icon="robot" href="/skills/other-agents">
+    Install via skill into `.agents/skills/`. Cline reads that directory automatically and also supports the streamable HTTP MCP endpoint.
+  </Card>
+  <Card title="Cursor" icon="cursor" href="/skills/other-agents">
+    Install via skill into `.agents/skills/`. Cursor reads that directory automatically — no additional configuration needed.
+  </Card>
+  <Card title="opencode" icon="brackets-curly" href="/skills/other-agents">
+    Install via skill — opencode reads `.claude/skills/` as well as `.agents/skills/`. MCP is also supported via `opencode.json`.
+  </Card>
+  <Card title="ChatGPT" icon="message" href="/skills/other-agents">
+    Install via skill into `.agents/skills/`. Available on Business, Enterprise, and Edu plans only — not Free, Plus, or Pro.
+  </Card>
+</CardGroup>
+
+<Note>
+  The Groniz CLI skill is open source at [github.com/groniz/groniz-cli](https://github.com/groniz/groniz-cli) under the Apache 2.0 license. You can read the raw `SKILL.md`, fork it, or contribute improvements.
+</Note>

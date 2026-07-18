@@ -1,0 +1,104 @@
+---
+title: "groniz upload: upload media files before posting"
+sidebarTitle: "upload"
+description: "Reference for groniz upload — uploads local images and video to Groniz and returns an id and path. The path value is required when attaching media to posts."
+---
+
+Before attaching any image or video to a post, you must upload the file through `groniz upload`. The command transfers the local file to Groniz's media storage and returns a hosted URL. That URL — the `.path` field in the response — is what you pass when creating a post. Raw local file paths and external URLs are rejected by the API.
+
+## `groniz upload <file>`
+
+Uploads a local file and returns a JSON object containing the media ID and its hosted path.
+
+<ParamField path="file" type="string" required>
+  Path to the local file to upload (relative or absolute).
+</ParamField>
+
+```bash
+groniz upload ./image.jpg
+```
+
+**Example output**
+
+```json
+{
+  "id": "img-abc123",
+  "path": "https://api.groniz.com/uploads/photo.jpg"
+}
+```
+
+### Supported formats
+
+| Type | Extensions |
+|---|---|
+| Image | `.jpg`, `.png`, `.gif`, `.webp` |
+| Video | `.mp4` |
+
+<Warning>
+  Passing a raw local file path (e.g. `./image.jpg`) or an external URL directly in a post's image array will be rejected with a `400` error. Always run `groniz upload` first and use the `.path` value returned in the response.
+</Warning>
+
+## Using upload output in posts
+
+The workflow is: upload the file, capture the `.path` (and optionally `.id`) from the response, then reference it in your `groniz posts create` call.
+
+**Full workflow example**
+
+```bash
+# 1. Upload the file and capture the response
+UPLOAD=$(groniz upload ./photo.jpg)
+
+# 2. Extract the path with jq
+IMAGE_PATH=$(echo "$UPLOAD" | jq -r '.path')
+IMAGE_ID=$(echo "$UPLOAD" | jq -r '.id')
+
+# 3. Create the post with the uploaded media
+groniz posts create \
+  --content "Check out this photo!" \
+  --integrations int_abc123 \
+  --json "{
+    \"content\": \"Check out this photo!\",
+    \"images\": [{\"id\": \"$IMAGE_ID\", \"path\": \"$IMAGE_PATH\"}],
+    \"integrationIds\": [\"int_abc123\"]
+  }"
+```
+
+The image array format accepted by `posts create` in JSON mode:
+
+```json
+[
+  {
+    "id": "img-abc123",
+    "path": "https://api.groniz.com/uploads/photo.jpg"
+  }
+]
+```
+
+<Tip>
+  When uploading multiple files for a carousel or multi-image post, run `groniz upload` once per file and collect all returned objects into the `images` array before constructing the post payload.
+</Tip>
+
+---
+
+## `groniz update`
+
+Updates the CLI binary to the latest available version.
+
+```bash
+groniz update
+```
+
+### `groniz update --check`
+
+Checks whether a newer version of the CLI is available without installing it. Exits with code `0` if the CLI is up to date, or code `10` if a newer version exists.
+
+```bash
+groniz update --check
+echo "Exit code: $?"
+# Exit code: 10  → update available
+# Exit code: 0   → already up to date
+```
+
+<Tip>
+  Use `groniz update --check` in CI pipelines to gate workflows on a minimum CLI version. Check the exit code after the command and fail the job (or trigger an update step) when it returns `10`. This prevents silent failures caused by agents running an outdated binary that lacks commands or fixes your workflow depends on.
+</Tip>

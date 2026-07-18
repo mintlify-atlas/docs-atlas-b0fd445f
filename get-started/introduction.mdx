@@ -1,0 +1,61 @@
+---
+title: "Groniz CLI: Agent-Native Social Media Scheduling"
+sidebarTitle: "Introduction"
+description: "Groniz CLI schedules posts to 32+ social networks from the terminal. Add the agent skill to let Claude Code, Codex, or Cursor drive posting automatically."
+---
+
+Groniz CLI is a self-contained native binary that schedules and publishes social media posts across 32+ channels — X, LinkedIn, Reddit, Instagram, Threads, YouTube, TikTok, Discord, Slack, Bluesky, and more — directly from your terminal. The companion agent skill extends that power to AI coding agents, giving tools like Claude Code, Codex, and Cursor the context they need to drive posting reliably without human hand-holding.
+
+## What is Groniz?
+
+Groniz is a hosted social scheduling service built for developer workflows. Connect your social accounts once through the Groniz Console, then publish and schedule content to 32+ platforms through a single, consistent API or CLI. Beyond simple scheduling, Groniz provides AI-assisted content generation, cross-channel analytics, and per-channel settings discovery — so you can tailor posts to each platform's character limits and media requirements at runtime rather than guessing.
+
+<Note>
+  The CLI communicates with the Groniz public API at `https://api.groniz.com/public/v1`. Every command returns JSON, making it easy to pipe output into `jq`, scripts, or agent tool calls.
+</Note>
+
+## What the skill covers
+
+`groniz --help` is thorough — it documents every command, sub-command, and flag. The agent skill deliberately does not restate that reference. Instead, it closes the four gaps that `--help` cannot address on its own:
+
+- **Authenticate first** — every command fails without valid credentials. Stored credentials (OAuth2 or a shell-profile API key) survive across shells and agent sessions; ad-hoc `export` statements do not.
+- **Upload media before posting** — raw file paths and external URLs are rejected server-side. You must call `groniz upload` first and pass the returned `.path` value to the post command.
+- **Discover channel settings at runtime** — `groniz integrations settings <id>` is the authoritative source for required fields and character limits per integration. Agents that hard-code platform assumptions receive 400 errors.
+- **Navigate common failure traps** — strict JSON output shape, diverging `jq` paths across sub-commands, building threads with repeated `-c` flags, the draft-mode validation skip, and the missing-release-id flow that silently leaves analytics unavailable.
+
+<Tip>
+  If you are integrating Groniz into an AI agent workflow, install the skill alongside the CLI. The skill is what teaches agents to call `groniz` correctly the first time.
+</Tip>
+
+## Explore the docs
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart"
+    icon="bolt"
+    href="/get-started/quickstart"
+  >
+    Install the CLI, authenticate, and schedule your first post in five minutes.
+  </Card>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/get-started/installation"
+  >
+    Detailed install steps for the native binary and the agent skill.
+  </Card>
+  <Card
+    title="Authentication"
+    icon="key"
+    href="/get-started/authentication"
+  >
+    Set up OAuth2 device flow or API key credentials for local and CI use.
+  </Card>
+  <Card
+    title="Agent Skill Overview"
+    icon="robot"
+    href="/skills/overview"
+  >
+    Learn how the groniz/groniz-cli skill integrates with Claude Code, Cursor, and more.
+  </Card>
+</CardGroup>

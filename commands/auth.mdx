@@ -1,0 +1,88 @@
+---
+title: "groniz auth: login, logout, and whoami commands"
+sidebarTitle: "auth"
+description: "Reference for groniz auth login (OAuth2 device flow), auth logout (remove credentials), and whoami (verify current session). Credentials stored in ~/.groniz/credentials.json."
+---
+
+The `groniz auth` command group handles authentication with the Groniz platform. Use `auth login` to start an OAuth2 device flow and store credentials locally, `auth logout` to remove them, and `whoami` to confirm which account the CLI is currently acting as.
+
+## `groniz auth login`
+
+Starts an OAuth2 device-flow authentication. The CLI prints a short code and a verification URL, waits for you to approve the request in your browser, then saves a long-lived credential to disk.
+
+<Steps>
+  <Step title="Run the command">
+    ```bash
+    groniz auth login
+    ```
+  </Step>
+  <Step title="Open the URL shown in your terminal">
+    The CLI prints a verification URL and a one-time code. Open the URL in any browser and enter the code when prompted.
+  </Step>
+  <Step title="Approve the request">
+    Sign in to your Groniz account and click **Allow**. The terminal polls automatically and confirms once the flow completes.
+  </Step>
+</Steps>
+
+Credentials are written to `~/.groniz/credentials.json` and are read automatically by every subsequent command.
+
+**Example output**
+
+```json
+{
+  "status": "authenticated",
+  "username": "yourhandle",
+  "email": "you@example.com"
+}
+```
+
+## `groniz auth logout`
+
+Removes the stored credentials from `~/.groniz/credentials.json`. After running this command, all CLI commands that require authentication will fail until you run `groniz auth login` again.
+
+```bash
+groniz auth logout
+```
+
+**Example output**
+
+```json
+{
+  "status": "logged_out"
+}
+```
+
+## `groniz whoami`
+
+Returns the identity associated with the current credentials. Use this to verify that the correct account is active before running automated workflows.
+
+```bash
+groniz whoami
+```
+
+**Example output**
+
+```json
+{
+  "username": "yourhandle",
+  "email": "you@example.com"
+}
+```
+
+## API key alternative
+
+Instead of the OAuth2 device flow you can authenticate with a personal API key. Export it as an environment variable before running any command:
+
+```bash
+export GRONIZ_API_KEY=<your-api-key>
+```
+
+Get your API key from [groniz.com/console/connectors/api-keys](https://groniz.com/console/connectors/api-keys).
+
+<Warning>
+  `export` only persists for the lifetime of the current shell session. In agent or CI environments the variable is lost when the process exits. Use `groniz auth login` and rely on the saved `~/.groniz/credentials.json` file, or inject the key through your environment's secret store so it is available on every invocation.
+</Warning>
+
+<Info>
+  When both `~/.groniz/credentials.json` **and** `GRONIZ_API_KEY` are present, the OAuth2 credentials from the login flow take priority.
+</Info>

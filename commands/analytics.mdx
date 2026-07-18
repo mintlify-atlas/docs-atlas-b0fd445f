@@ -1,0 +1,128 @@
+---
+title: "groniz analytics: platform and post metric commands"
+sidebarTitle: "analytics"
+description: "Reference for groniz analytics platform (channel-level metrics with date range) and analytics post (post-level metrics). Covers which platforms report analytics and which do not."
+---
+
+The `groniz analytics` command group retrieves performance data from your connected channels. Use `platform` for aggregate channel-level metrics over a date range, and `post` for impression and engagement data on a specific published post. Analytics require a valid release ID on the post — see the [release ID section](#release-id-requirement) below if metrics are unavailable.
+
+## `groniz analytics platform`
+
+Returns platform-level metrics for a connected channel over a specified date window.
+
+<ParamField query="--integration-id" type="string" required>
+  The ID of the integration to pull metrics for. Obtain IDs from `groniz integrations list`.
+</ParamField>
+
+<ParamField query="--from" type="string" required>
+  Start of the reporting window (ISO 8601 date, e.g. `2025-08-01`).
+</ParamField>
+
+<ParamField query="--to" type="string" required>
+  End of the reporting window (ISO 8601 date, e.g. `2025-08-31`).
+</ParamField>
+
+```bash
+groniz analytics platform \
+  --integration-id int_abc123 \
+  --from 2025-08-01 \
+  --to 2025-08-31
+```
+
+**Example output**
+
+```json
+{
+  "integrationId": "int_abc123",
+  "provider": "x",
+  "from": "2025-08-01",
+  "to": "2025-08-31",
+  "metrics": {
+    "impressions": 142300,
+    "profileVisits": 890,
+    "followers": 4210,
+    "followerDelta": 37
+  }
+}
+```
+
+## `groniz analytics post`
+
+Returns engagement metrics for a single published post.
+
+<ParamField query="--post-id" type="string" required>
+  The Groniz post ID to retrieve metrics for.
+</ParamField>
+
+```bash
+groniz analytics post --post-id post_xyz789
+```
+
+**Example output**
+
+```json
+{
+  "postId": "post_xyz789",
+  "provider": "x",
+  "metrics": {
+    "impressions": 5420,
+    "likes": 312,
+    "reposts": 48,
+    "replies": 17,
+    "bookmarks": 91,
+    "clicks": 204
+  }
+}
+```
+
+## Platform availability
+
+Analytics are only available on platforms that expose a metrics API. The table below shows which providers support the analytics commands.
+
+| Platform | Analytics available |
+|---|---|
+| X (Twitter) | ✅ |
+| Instagram | ✅ |
+| LinkedIn Pages | ✅ |
+| Facebook | ✅ |
+| Threads | ✅ |
+| Pinterest | ✅ |
+| Reddit | ❌ |
+| Bluesky | ❌ |
+| Mastodon | ❌ |
+| Discord | ❌ |
+| Telegram | ❌ |
+
+<Info>
+  Platforms marked ❌ do not expose a public metrics API. Calling analytics commands for integrations on those platforms will return an error.
+</Info>
+
+## Release ID requirement
+
+Every post must have a **release ID** — a reference to the live content on the provider's platform — before `groniz analytics post` can return data. Posts created through the CLI are linked automatically. Posts published outside the CLI (for example, directly on the platform's website) have no release ID and return empty analytics until you connect them manually.
+
+**To fix a post with no release ID:**
+
+<Steps>
+  <Step title="Find candidate release IDs">
+    ```bash
+    groniz posts missing post_xyz789
+    ```
+    This queries the provider and returns a list of published items that could match the post.
+  </Step>
+  <Step title="Identify the correct item">
+    Review the output and note the `id` of the item that corresponds to your post.
+  </Step>
+  <Step title="Connect the post">
+    ```bash
+    groniz posts connect \
+      --post-id post_xyz789 \
+      --release-id rel_provider999
+    ```
+  </Step>
+  <Step title="Retry analytics">
+    ```bash
+    groniz analytics post --post-id post_xyz789
+    ```
+  </Step>
+</Steps>

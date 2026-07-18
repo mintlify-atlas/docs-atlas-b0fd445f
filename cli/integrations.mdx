@@ -1,0 +1,166 @@
+---
+title: "List channels and inspect settings with groniz integrations"
+sidebarTitle: "Integrations"
+description: "Use groniz integrations list and settings to discover connected social accounts, retrieve integration IDs, and inspect per-platform required fields and character limits."
+---
+
+In the Groniz CLI, **integrations** and **channels** refer to the same thing — a connected social account or platform. The CLI uses the term `integrations`; the Groniz web UI calls them channels. Every post command requires an integration ID, and every platform has its own required fields, character limits, and options. Rather than hardcoding those assumptions, the CLI gives you `integrations settings` as the authoritative source of truth at runtime.
+
+## Listing integrations
+
+Run `groniz integrations list` to get a JSON array of every channel connected to your account. Each entry includes the integration's `id`, display `name`, and `__type` (the provider identifier).
+
+```bash
+groniz integrations list
+```
+
+Example output:
+
+```json
+[
+  {
+    "id": "int_x_7a2b3c",
+    "name": "Groniz on X",
+    "__type": "x"
+  },
+  {
+    "id": "int_reddit_9d4e5f",
+    "name": "r/webdev account",
+    "__type": "reddit"
+  },
+  {
+    "id": "int_linkedin_1g2h3i",
+    "name": "Jane Doe – LinkedIn",
+    "__type": "linkedin"
+  }
+]
+```
+
+### Extracting an integration ID with jq
+
+Pipe the output to `jq` to pull out specific values without manual copying:
+
+```bash
+# Get the ID of the first integration
+groniz integrations list | jq '.[0].id'
+
+# Find all integrations of a specific type
+groniz integrations list | jq '[.[] | select(.__type == "instagram")]'
+
+# Build a quick name → id map
+groniz integrations list | jq '[.[] | {(.name): .id}] | add'
+```
+
+---
+
+## Inspecting integration settings
+
+`groniz integrations settings <id>` returns the settings schema for a specific integration — the required fields, character limits, and platform-specific options that apply when posting to that channel.
+
+```bash
+groniz integrations settings <integration-id>
+```
+
+This is the only reliable way to know what a platform needs. Settings vary significantly between providers. For example:
+
+**X** may expose a reply audience field:
+
+```json
+{
+  "fields": {
+    "who_can_reply_post": {
+      "type": "select",
+      "options": ["everyone", "mentioned_users", "subscribers"],
+      "required": false
+    }
+  },
+  "characterLimit": 280
+}
+```
+
+**Reddit** requires a subreddit, title, and optionally a flair:
+
+```json
+{
+  "fields": {
+    "subreddit": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 300
+    },
+    "flair": {
+      "type": "string",
+      "required": false
+    }
+  }
+}
+```
+
+<Warning>
+  Always call `groniz integrations settings <id>` before posting to a channel for the first time. Never hardcode platform assumptions — required fields and character limits change, and a mismatched payload will be rejected with a 400 error.
+</Warning>
+
+<Tip>
+  This is especially important when posting to a channel type you haven't used before. Platforms like Reddit (subreddit + title), YouTube (title, description, visibility), and Pinterest (board, link) have required fields that differ entirely from simple text-based platforms.
+</Tip>
+
+---
+
+## Triggering integration tools
+
+Some integrations expose dynamic tools — platform-specific actions beyond standard posting. Use `groniz integrations trigger` to invoke them.
+
+```bash
+groniz integrations trigger
+```
+
+Run `groniz integrations trigger --help` for available flags and options. Triggerable tools vary by provider.
+
+---
+
+## Provider `__type` reference
+
+The `__type` field in the `integrations list` output identifies the provider. Use it to match integrations to the platform you intend to target.
+
+| Provider | `__type` |
+|---|---|
+| X (Twitter) | `x` |
+| LinkedIn (personal profile) | `linkedin` |
+| LinkedIn (page) | `linkedin-page` |
+| Facebook | `facebook` |
+| Instagram | `instagram` |
+| Instagram (standalone) | `instagram-standalone` |
+| Threads | `threads` |
+| Bluesky | `bluesky` |
+| Mastodon | `mastodon` |
+| Warpcast | `warpcast` |
+| Nostr | `nostr` |
+| VK | `vk` |
+| YouTube | `youtube` |
+| TikTok | `tiktok` |
+| Reddit | `reddit` |
+| Lemmy | `lemmy` |
+| Pinterest | `pinterest` |
+| Discord | `discord` |
+| Slack | `slack` |
+| Telegram | `telegram` |
+| Dribbble | `dribbble` |
+| Medium | `medium` |
+| Dev.to | `devto` |
+| Hashnode | `hashnode` |
+| WordPress | `wordpress` |
+| Listmonk | `listmonk` |
+| Google My Business | `gmb` |
+| Whop | `whop` |
+| Skool | `skool` |
+| Kick | `kick` |
+| Twitch | `twitch` |
+| Moltbook | `moltbook` |
+
+<Tip>
+  When building automation or agent workflows, store integration IDs by `__type` rather than by `name`. Display names can change; the `__type` and `id` are stable identifiers.
+</Tip>

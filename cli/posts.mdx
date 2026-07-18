@@ -1,0 +1,191 @@
+---
+title: "Create, schedule, and manage posts with the Groniz CLI"
+sidebarTitle: "Posts"
+description: "Use groniz posts create, list, delete, and connect to schedule content across 32+ social channels, post threads, and link posts to their published release IDs."
+---
+
+The `groniz posts` commands are the primary way to create and manage content across your connected social channels. This page covers creating immediate and scheduled posts, building thread chains, working with drafts, and resolving missing release IDs that block analytics.
+
+## Creating a post
+
+### Post immediately
+
+Omit the `-s` flag to publish a post right away. Pass your content with `-c` and target one or more integrations with `-i`.
+
+```bash
+groniz posts create -c "Your content here" -i "integration-id"
+```
+
+### Schedule a post
+
+Add the `-s` flag with an ISO 8601 datetime to schedule the post for a future time.
+
+```bash
+groniz posts create \
+  -c "Scheduled content" \
+  -i "integration-id" \
+  -s "2025-01-15T10:00:00Z"
+```
+
+### Post to multiple channels
+
+Repeat the `-i` flag for each channel, or pass a comma-separated list of integration IDs in a single flag.
+
+```bash
+# Repeated flag
+groniz posts create -c "Cross-post content" \
+  -i "x-integration-id" \
+  -i "linkedin-integration-id" \
+  -i "instagram-integration-id"
+
+# Comma-separated
+groniz posts create -c "Cross-post content" \
+  -i "x-integration-id,linkedin-integration-id,instagram-integration-id"
+```
+
+### JSON output
+
+All `groniz posts` commands return JSON. A successful `posts create` response looks like this:
+
+```json
+{
+  "id": "post_abc123",
+  "content": "Your content here",
+  "integrations": ["integration-id"],
+  "scheduledAt": "2025-01-15T10:00:00Z",
+  "status": "scheduled",
+  "createdAt": "2025-01-14T08:22:00Z"
+}
+```
+
+<Note>
+  Pipe any command's output to `jq` for readable, filterable JSON: `groniz posts create ... | jq '.'`
+</Note>
+
+---
+
+## Schedule a post — step by step
+
+<Steps>
+  <Step title="Find your integration ID">
+    Run `groniz integrations list` and note the `id` of the channel you want to post to. See [Integrations](/cli/integrations) for details.
+  </Step>
+  <Step title="Check the channel's settings">
+    Run `groniz integrations settings <id>` to confirm required fields and character limits for that platform before composing your content.
+  </Step>
+  <Step title="Create the scheduled post">
+    Pass your content, integration ID, and an ISO 8601 datetime to the `-s` flag:
+
+    ```bash
+    groniz posts create \
+      -c "Your scheduled content" \
+      -i "integration-id" \
+      -s "2025-01-15T10:00:00Z"
+    ```
+  </Step>
+  <Step title="Confirm the post">
+    Check the `status` field in the JSON response. A value of `"scheduled"` confirms the post is queued.
+  </Step>
+</Steps>
+
+---
+
+## Thread posts
+
+To create a thread, repeat the `-c` flag for each post in the chain. Groniz publishes them in order as a connected thread on platforms that support it (e.g. X, Threads).
+
+```bash
+groniz posts create \
+  -c "This is the first post in the thread." \
+  -c "This is the reply to the first post." \
+  -c "And this continues the thread further." \
+  -i "x-integration-id"
+```
+
+Each `-c` value becomes one node in the thread chain in the order you supply them.
+
+---
+
+## Draft posts
+
+Add `--draft` to save a post without publishing or validating it. Drafts are useful when you want to stage content and review it before committing.
+
+```bash
+groniz posts create \
+  -c "Work-in-progress content" \
+  -i "integration-id" \
+  --draft
+```
+
+<Warning>
+  `--draft` skips all server-side validation. Required platform fields (such as a Reddit subreddit or a title) will **not** be checked until you attempt to publish. Errors that would have been caught at creation time will surface later, potentially blocking the post from going out.
+</Warning>
+
+---
+
+## Listing posts
+
+`groniz posts list` returns a JSON array of your posts. Use it to audit scheduled content or find post IDs for downstream commands.
+
+```bash
+groniz posts list
+```
+
+Example output:
+
+```json
+[
+  {
+    "id": "post_abc123",
+    "content": "Your scheduled content",
+    "status": "scheduled",
+    "scheduledAt": "2025-01-15T10:00:00Z"
+  },
+  {
+    "id": "post_def456",
+    "content": "A draft post",
+    "status": "draft",
+    "scheduledAt": null
+  }
+]
+```
+
+You can filter by date range — run `groniz posts list --help` to see available flags.
+
+---
+
+## Deleting a post
+
+Delete a post by its ID. This action cannot be undone.
+
+```bash
+groniz posts delete <post-id>
+```
+
+---
+
+## Release IDs and analytics
+
+Every published post should receive a **release ID** — the identifier that links your Groniz post record to the content as it exists on the platform. When a release ID is missing, analytics for that post are unavailable.
+
+### Find available published content
+
+If a post has no release ID, use `posts missing` to list content that the platform has available and that could be connected to it:
+
+```bash
+groniz posts missing <post-id>
+```
+
+### Connect a post to its release ID
+
+Once you've identified the correct release ID from the output above, use `posts connect` to link the post:
+
+```bash
+groniz posts connect
+```
+
+Follow the interactive prompt (or supply flags — run `groniz posts connect --help`) to complete the connection. After connecting, analytics commands will return data for that post.
+
+<Note>
+  See [Analytics](/cli/analytics) for details on which platforms support analytics and what metrics are available.
+</Note>

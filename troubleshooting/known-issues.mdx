@@ -1,0 +1,124 @@
+---
+title: "Groniz CLI known issues and platform limitations"
+sidebarTitle: "Known Issues"
+description: "Known bugs and platform-specific limitations in Groniz: 500 vs 404 on missing post IDs, Bluesky 2FA restriction, Mastodon instance limits, and analytics gaps."
+---
+
+Groniz supports 32+ channels and a wide range of scheduling features, but several known bugs and platform constraints can produce unexpected behaviour if you are not aware of them. This page documents confirmed issues with specific workarounds, and platform limitations that reflect upstream API restrictions rather than Groniz bugs.
+
+## Known bugs
+
+### DELETE on a missing post ID returns 500 instead of 404
+
+When you attempt to delete a post whose ID does not exist in the database, the API occasionally returns `500 Internal Server Error` instead of the expected `404 Not Found`. This is a known issue and the 500 in this case does not indicate a real server fault.
+
+**How to detect it:** The response body for this specific bug matches a recognisable signature — the error message references a missing record rather than a server crash or timeout. If you receive a 500 on a DELETE request, inspect the response body:
+
+```bash
+# Capture the full response with status code
+curl -s -o response.json -w "%{http_code}" \
+  -X DELETE https://api.groniz.com/v1/posts/<post-id> \
+  -H "Authorization: Bearer $GRONIZ_API_KEY"
+
+cat response.json | jq '.'
+```
+
+If the body contains a not-found message for the given ID, treat it the same as a 404 — the resource is already absent, and no further action is needed.
+
+**Workaround:** In scripts and agent flows, treat a 500 on a DELETE endpoint as a *possible* 404. Check whether the body matches the known missing-record signature. If it does, continue without retrying. If the body indicates a genuine server error (timeout, crash, unexpected exception), apply the standard retry-with-backoff strategy.
+
+<Warning>
+  Only apply the "treat 500 as 404" logic specifically to DELETE endpoints where the body matches the missing-record signature. All other 500 errors should be treated as real server errors and retried with exponential backoff. Ignoring genuine 500s will cause silent data loss or inconsistent state.
+</Warning>
+
+## Platform limitations
+
+The following limitations are upstream constraints — they reflect how each platform's API or Groniz's current integration tier works, not configuration errors on your end.
+
+<AccordionGroup>
+  <Accordion title="Bluesky — two-factor authentication not supported">
+    Groniz's Bluesky integration does not work when two-factor authentication (2FA) is enabled on the Bluesky account. The OAuth flow cannot complete with 2FA active.
+
+    **Workaround:** Disable 2FA on the Bluesky account before connecting it to Groniz. If 2FA is a firm requirement for the account, the Bluesky channel cannot be used with Groniz at this time.
+  </Accordion>
+
+  <Accordion title="Mastodon — mastodon.social only">
+    Only accounts on `mastodon.social` are currently supported. Self-hosted Mastodon instances and other Mastodon-compatible servers (such as `fosstodon.org` or custom instances) are not yet supported.
+
+    **Workaround:** Use a `mastodon.social` account. If your audience is on a different instance, this channel is not available in Groniz until multi-instance support is added.
+  </Accordion>
+
+  <Accordion title="LinkedIn analytics — Pages only, not personal profiles">
+    LinkedIn's API exposes analytics data for LinkedIn Pages but not for personal profiles. If you connect a personal LinkedIn profile, posts will be created successfully but the analytics endpoint will return no data for that channel.
+
+    **Workaround:** Connect a LinkedIn Page rather than a personal profile if analytics are required. Personal profile posting itself is functional — only analytics are unavailable.
+  </Accordion>
+
+  <Accordion title="Reddit, Bluesky, Mastodon, Discord, Telegram — no analytics">
+    Analytics are not available for posts on Reddit, Bluesky, Mastodon, Discord, or Telegram. These platforms either do not expose the necessary data through their APIs or the integration does not yet include analytics support.
+
+    Posts to these channels are created and scheduled normally — only the analytics data is absent.
+  </Accordion>
+
+  <Accordion title="YouTube scheduling — Groniz-side queue, not YouTube's own publish-at">
+    When you schedule a YouTube post through Groniz, the video is held in Groniz's own scheduling queue and published at the specified time by Groniz. It does not use YouTube Studio's native scheduled publish feature.
+
+    This means the post will not appear as "scheduled" inside YouTube Studio before it goes live. The scheduling is fully controlled by Groniz, so manage timing from the Groniz CLI or console rather than from YouTube Studio.
+  </Accordion>
+
+  <Accordion title="Pinterest multi-image — images must share identical dimensions">
+    When creating a Pinterest post with multiple images, all images must have identical pixel dimensions. Groniz validates this constraint before the post is published. If dimensions differ, the post is rejected before reaching Pinterest's API.
+
+    **How to fix:** Ensure all images in a multi-image Pinterest post share the same width and height before uploading. Resize or crop them to a consistent size with your image tooling first, then run `groniz upload` on each.
+  </Accordion>
+</AccordionGroup>
+
+## Rate limit details
+
+The create-post endpoint is rate-limited at **90 requests per hour** on self-hosted Groniz and **100 requests per hour** on Groniz Cloud. The limit is global across your workspace — it is not tiered by plan.
+
+| Plan tier | Create-post rate limit |
+|---|---|
+| Self-hosted | 90 requests / hour |
+| Cloud | 100 requests / hour |
+
+Plan tiers affect a different set of constraints — the number of channels you can connect and your monthly post quota. Rate limits are the same regardless of which plan tier you are on.
+
+**Workaround:** Schedule multiple posts in a single request to maximise throughput without hitting the cap. Batching is the most effective strategy for high-volume scheduling:
+
+```bash
+# Schedule multiple posts in one request — counts as one against the rate limit
+groniz posts create \
+  --channel <id1> --message "Post one" --schedule-at "2025-08-01T09:00:00Z" \
+  --channel <id2> --message "Post two" --schedule-at "2025-08-01T09:00:00Z" \
+  --channel <id3> --message "Post three" --schedule-at "2025-08-01T09:30:00Z"
+```
+
+If you are building agent loops that create posts one at a time, refactor to collect all posts first and submit them together.
+
+## Analytics and release IDs
+
+Groniz attaches a **release ID** to each post when it is created. This ID links the post to the analytics system — without it, the analytics endpoint has no record to report on.
+
+**Why a post might have no release ID:**
+
+- The post was created as a draft (draft mode skips validation and, in some cases, release ID assignment).
+- The post was created before the release ID feature was introduced in an older version of the CLI or API.
+
+**Symptoms:** Calling the analytics endpoint for the post returns empty data or a 404 on the analytics resource, even though the post itself exists and was published successfully.
+
+**Fix workflow:**
+
+```bash
+# 1. Find posts that are missing a release ID
+groniz posts missing <release-id>
+
+# 2. Connect each post to the appropriate release
+groniz posts connect <post-id> <release-id>
+```
+
+After connecting, analytics data should become available within the normal reporting window.
+
+<Note>
+  If you encounter an issue not listed on this page, contact Groniz support through [groniz.com](https://groniz.com). Include the request ID from the error response body where possible — it speeds up diagnosis significantly.
+</Note>

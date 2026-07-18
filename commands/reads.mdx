@@ -1,0 +1,172 @@
+---
+title: "groniz reads: read public X profiles, posts, and metrics"
+sidebarTitle: "reads"
+description: "Reference for groniz reads x commands to read public X (Twitter) profiles, recent posts, single posts, search results, and aggregated engagement metrics."
+---
+
+The `groniz reads` command group provides read access to public data on supported social platforms. Currently, reads are available for X (Twitter). Use these commands to fetch profile information, recent posts, individual post details, search results, or aggregated engagement metrics — all without needing to post anything.
+
+<Note>
+  All `groniz reads x` commands operate on **public X data**. They do not require a connected X integration and work with any public handle or post ID. A valid Groniz session (`groniz auth login`) is still required.
+</Note>
+
+## `groniz reads x profile <handle>`
+
+Fetches the public profile of an X account.
+
+<ParamField path="handle" type="string" required>
+  The X handle to look up, without the `@` prefix.
+</ParamField>
+
+```bash
+groniz reads x profile groniz
+```
+
+**Example output**
+
+```json
+{
+  "handle": "groniz",
+  "name": "Groniz",
+  "bio": "Schedule social media posts across 32+ channels.",
+  "followers": 8400,
+  "following": 312,
+  "verified": false,
+  "url": "https://groniz.com"
+}
+```
+
+## `groniz reads x posts <handle>`
+
+Returns the most recent posts from a public X account.
+
+<ParamField path="handle" type="string" required>
+  The X handle to fetch posts for, without the `@` prefix.
+</ParamField>
+
+<ParamField query="--count" type="number">
+  Number of posts to return. Defaults to the platform maximum when omitted.
+</ParamField>
+
+```bash
+groniz reads x posts groniz --count 5
+```
+
+**Example output**
+
+```json
+[
+  {
+    "id": "1234567890123456789",
+    "content": "We just shipped a new feature!",
+    "createdAt": "2025-08-20T11:00:00Z",
+    "metrics": {
+      "likes": 42,
+      "reposts": 7,
+      "replies": 3
+    }
+  }
+]
+```
+
+## `groniz reads x post <id>`
+
+Fetches a single X post by its post ID.
+
+<ParamField path="id" type="string" required>
+  The numeric ID of the X post to retrieve.
+</ParamField>
+
+```bash
+groniz reads x post 1234567890123456789
+```
+
+**Example output**
+
+```json
+{
+  "id": "1234567890123456789",
+  "handle": "groniz",
+  "content": "We just shipped a new feature!",
+  "createdAt": "2025-08-20T11:00:00Z",
+  "metrics": {
+    "impressions": 3200,
+    "likes": 42,
+    "reposts": 7,
+    "replies": 3,
+    "bookmarks": 18
+  }
+}
+```
+
+## `groniz reads x search <query>`
+
+Searches recent public X posts matching a query string.
+
+<ParamField path="query" type="string" required>
+  The search query. Supports the same operators as the X search interface (e.g. `from:handle`, `#hashtag`, `-excluded`).
+</ParamField>
+
+<ParamField query="--count" type="number">
+  Maximum number of results to return.
+</ParamField>
+
+```bash
+groniz reads x search "groniz CLI" --count 10
+```
+
+**Example output**
+
+```json
+[
+  {
+    "id": "9876543210987654321",
+    "handle": "devuser",
+    "content": "Just tried the groniz CLI — scheduling posts is way easier now.",
+    "createdAt": "2025-08-19T08:45:00Z",
+    "metrics": {
+      "likes": 5,
+      "reposts": 1
+    }
+  }
+]
+```
+
+## `groniz reads x metrics <handle>`
+
+Returns aggregated engagement metrics for a public X account over a date window. Useful for competitive benchmarking or monitoring account performance without a direct integration.
+
+<ParamField path="handle" type="string" required>
+  The X handle to aggregate metrics for, without the `@` prefix.
+</ParamField>
+
+<ParamField query="--from" type="string">
+  Start of the window (ISO 8601 date, e.g. `2025-08-01`).
+</ParamField>
+
+<ParamField query="--to" type="string">
+  End of the window (ISO 8601 date, e.g. `2025-08-31`).
+</ParamField>
+
+```bash
+groniz reads x metrics groniz \
+  --from 2025-08-01 \
+  --to 2025-08-31
+```
+
+**Example output**
+
+```json
+{
+  "handle": "groniz",
+  "from": "2025-08-01",
+  "to": "2025-08-31",
+  "metrics": {
+    "totalImpressions": 98400,
+    "totalLikes": 1230,
+    "totalReposts": 204,
+    "totalReplies": 88,
+    "averageLikesPerPost": 41
+  }
+}
+```

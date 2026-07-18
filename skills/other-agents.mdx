@@ -1,0 +1,233 @@
+---
+title: "Groniz skill for Codex, Cline, Cursor, opencode, and more"
+sidebarTitle: "Other Agents"
+description: "Install the Groniz CLI skill for OpenAI Codex, Cline, Cursor, opencode, ChatGPT, and other skill-aware agents to enable social media posting from any coding agent."
+---
+
+The Groniz agent skill installs the same way across all supported agents — one command, no manual configuration. The differences between agents come down to where the skill file is placed and whether the agent also supports the Groniz MCP server as an alternative transport. This page covers every agent other than Claude Code, which has [its own setup guide](/skills/claude-code).
+
+## Install command
+
+To let the `skills` CLI detect your agent automatically:
+
+```bash
+npx skills add groniz/groniz-cli
+```
+
+Or target one or more agents by name to skip the detection prompt:
+
+```bash
+npx skills add groniz/groniz-cli -a opencode -a cline
+```
+
+Select your agent below for specific install paths, MCP instructions, and any per-agent caveats.
+
+---
+
+<Tabs>
+  <Tab title="Codex">
+    ### Skill install
+
+    ```bash
+    npx skills add groniz/groniz-cli
+    ```
+
+    The skill file is installed to `.agents/skills/` in your project directory. Codex reads this directory automatically.
+
+    ### MCP setup
+
+    Codex supports MCP via `~/.codex/config.toml`. Add the Groniz server with:
+
+    ```bash
+    codex mcp add --url https://mcp.groniz.com/mcp --bearer-token-env-var GRONIZ_API_KEY
+    ```
+
+    This adds an entry to your Codex config that passes `GRONIZ_API_KEY` from your environment as the Bearer token on every MCP request.
+
+    <Warning>
+      The `GRONIZ_API_KEY` environment variable **must be set before Codex launches**. Codex reads environment variables at startup and will not pick up changes made after it is running. Add the export to your shell profile (`~/.zshrc`, `~/.bashrc`, etc.) so it is always present when you open a new terminal.
+    </Warning>
+
+    ### Authentication
+
+    Set your API key in your shell profile so it is available before Codex starts:
+
+    ```bash
+    export GRONIZ_API_KEY=your_api_key_here
+    ```
+
+    Or authenticate via the CLI directly:
+
+    ```bash
+    groniz auth login
+    ```
+
+    The stored credential in `~/.groniz/credentials.json` is used automatically by the CLI regardless of the `GRONIZ_API_KEY` env var.
+  </Tab>
+
+  <Tab title="Cline">
+    ### Skill install
+
+    ```bash
+    npx skills add groniz/groniz-cli
+    ```
+
+    The skill file is installed to `.agents/skills/` in your project directory. Cline reads this directory automatically — no additional configuration is required.
+
+    ### MCP setup
+
+    Cline supports MCP via the streamable HTTP endpoint. In Cline's MCP server settings, add a new server with:
+
+    - **URL:** `https://mcp.groniz.com/mcp`
+    - **Header:** `Authorization: Bearer YOUR_API_KEY`
+
+    Replace `YOUR_API_KEY` with your Groniz API key.
+
+    ### Authentication
+
+    Run this once in your terminal:
+
+    ```bash
+    groniz auth login
+    ```
+
+    Alternatively, export your key in your shell profile:
+
+    ```bash
+    export GRONIZ_API_KEY=your_api_key_here
+    ```
+  </Tab>
+
+  <Tab title="Cursor">
+    ### Skill install
+
+    ```bash
+    npx skills add groniz/groniz-cli
+    ```
+
+    The skill file is installed to `.agents/skills/` in your project directory. Cursor reads this directory automatically — no further configuration is needed after install.
+
+    ### Authentication
+
+    Run this once in your terminal:
+
+    ```bash
+    groniz auth login
+    ```
+
+    Or set your API key in your shell profile so Cursor's terminal environment picks it up:
+
+    ```bash
+    export GRONIZ_API_KEY=your_api_key_here
+    ```
+
+    Cursor does not currently support an MCP transport for Groniz. The skill-based integration is the recommended approach.
+  </Tab>
+
+  <Tab title="opencode">
+    ### Skill install
+
+    ```bash
+    npx skills add groniz/groniz-cli
+    ```
+
+    opencode reads `.claude/skills/` as well as `.agents/skills/`, so the skill is installed to `.claude/skills/` for opencode. Both directories are supported — the `skills` CLI selects the correct one automatically.
+
+    ### MCP setup
+
+    opencode supports MCP via `opencode.json`. Add the Groniz server to your `opencode.json`:
+
+    ```json
+    {
+      "mcp": {
+        "groniz": {
+          "url": "https://mcp.groniz.com/mcp",
+          "headers": {
+            "Authorization": "Bearer YOUR_API_KEY"
+          }
+        }
+      }
+    }
+    ```
+
+    Replace `YOUR_API_KEY` with your Groniz API key. opencode will connect to the MCP server on startup.
+
+    ### Authentication
+
+    Run this once in your terminal:
+
+    ```bash
+    groniz auth login
+    ```
+
+    Or set your API key in your shell profile:
+
+    ```bash
+    export GRONIZ_API_KEY=your_api_key_here
+    ```
+  </Tab>
+
+  <Tab title="ChatGPT">
+    ### Skill install
+
+    ```bash
+    npx skills add groniz/groniz-cli
+    ```
+
+    The skill file is installed to `.agents/skills/` in your project directory.
+
+    <Warning>
+      ChatGPT agent skills are available on **Business, Enterprise, and Edu plans only**. They are not available on Free, Plus, or Pro plans. If you are on a plan that does not include skills, the skill file will be installed but ChatGPT will not read it.
+    </Warning>
+
+    ### MCP
+
+    ChatGPT cannot present a custom API key to a remote MCP server, so the Groniz MCP endpoint is not available for ChatGPT. The skill-based integration is the only supported method.
+
+    ### Authentication
+
+    Set your API key in the sandbox environment where ChatGPT executes commands:
+
+    ```bash
+    export GRONIZ_API_KEY=your_api_key_here
+    ```
+
+    Or run `groniz auth login` inside the sandbox terminal to store credentials in `~/.groniz/credentials.json`.
+  </Tab>
+</Tabs>
+
+---
+
+## Common to all agents
+
+Regardless of which agent you use, two things must be in place before the agent can post:
+
+**1. The Groniz CLI binary**
+
+The skill teaches the agent how to use the CLI, but the binary itself must be installed separately. If you have not already done this:
+
+```bash
+curl -fsSL https://groniz.com/install.sh | sh
+```
+
+No Node.js required. The binary is self-contained and can be updated later with `groniz update`.
+
+**2. Valid credentials**
+
+Every Groniz command requires authentication. Run this once:
+
+```bash
+groniz auth login
+```
+
+Or set the environment variable in your shell profile:
+
+```bash
+export GRONIZ_API_KEY=your_api_key_here
+```
+
+The stored credential in `~/.groniz/credentials.json` persists across shell sessions and agent restarts, unlike an `export` that only lasts for the current session.
+
+<Note>
+  If your agent is not listed above, check whether it reads `.claude/skills/` or `.agents/skills/`. If it supports either directory, install the skill manually by copying `SKILL.md` from [github.com/groniz/groniz-cli](https://github.com/groniz/groniz-cli) into the appropriate folder. The file is plain Markdown and requires no modification.
+</Note>

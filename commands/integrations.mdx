@@ -1,0 +1,133 @@
+---
+title: "groniz integrations: list, settings, and trigger commands"
+sidebarTitle: "integrations"
+description: "Reference for groniz integrations list (all connected channels), settings (per-platform schema), and trigger (dynamic tools). Essential for discovering integration IDs and required fields."
+---
+
+The `groniz integrations` command group lets you inspect every social channel connected to your Groniz account. Use `list` to discover integration IDs, `settings` to fetch the exact fields and character limits a platform requires before posting, and `trigger` to invoke dynamic platform-specific tools.
+
+## `groniz integrations list`
+
+Returns a JSON array of all integrations connected to your account. Each object contains the integration's unique ID, human-readable name, and provider type.
+
+```bash
+groniz integrations list
+```
+
+**Example output**
+
+```json
+[
+  {
+    "id": "int_abc123",
+    "name": "My X Account",
+    "__type": "x"
+  },
+  {
+    "id": "int_def456",
+    "name": "Company LinkedIn Page",
+    "__type": "linkedin_page"
+  },
+  {
+    "id": "int_ghi789",
+    "name": "r/myprogramming subreddit",
+    "__type": "reddit"
+  }
+]
+```
+
+**Extract only integration IDs with `jq`**
+
+```bash
+groniz integrations list | jq '.[].id'
+```
+
+### Common provider `__type` values
+
+| `__type` | Platform |
+|---|---|
+| `x` | X (Twitter) |
+| `linkedin_page` | LinkedIn Page |
+| `linkedin_profile` | LinkedIn Personal Profile |
+| `instagram` | Instagram |
+| `facebook` | Facebook Page |
+| `threads` | Threads |
+| `reddit` | Reddit |
+| `bluesky` | Bluesky |
+| `mastodon` | Mastodon |
+| `discord` | Discord |
+| `telegram` | Telegram |
+| `pinterest` | Pinterest |
+| `youtube` | YouTube |
+| `tiktok` | TikTok |
+
+## `groniz integrations settings <id>`
+
+Returns the JSON settings schema for a specific integration. The schema describes every field the platform requires or accepts when creating a post, including character limits and enumerated options.
+
+```bash
+groniz integrations settings int_abc123
+```
+
+**Example — X integration**
+
+```json
+{
+  "who_can_reply_post": {
+    "type": "string",
+    "enum": ["everyone", "mentioned_users", "subscribers"],
+    "default": "everyone",
+    "description": "Who can reply to this post"
+  },
+  "characterLimit": 280
+}
+```
+
+**Example — Reddit integration**
+
+```json
+{
+  "subreddit": {
+    "type": "string",
+    "required": true,
+    "description": "Target subreddit (without r/ prefix)"
+  },
+  "title": {
+    "type": "string",
+    "required": true,
+    "description": "Post title"
+  },
+  "flair": {
+    "type": "string",
+    "required": false,
+    "description": "Flair tag to apply to the post"
+  }
+}
+```
+
+<Warning>
+  Always call `groniz integrations settings <id>` before posting to a platform type you haven't used before. Platform schemas differ significantly — hardcoding field assumptions leads to `400` errors that can be difficult to debug.
+</Warning>
+
+## `groniz integrations trigger`
+
+Invokes a dynamic tool exposed by a specific integration. Tools vary by provider and can include actions such as fetching available subreddits, retrieving board lists, or other platform-specific operations.
+
+<ParamField body="--integration-id" type="string" required>
+  The ID of the integration whose tool you want to invoke.
+</ParamField>
+
+<ParamField body="--tool" type="string" required>
+  The name of the tool to run. Available tool names are platform-dependent.
+</ParamField>
+
+<ParamField body="--params" type="string">
+  Parameters to pass to the tool, encoded as a JSON string.
+</ParamField>
+
+```bash
+groniz integrations trigger \
+  --integration-id int_ghi789 \
+  --tool list_subreddits \
+  --params '{"limit": 10}'
+```

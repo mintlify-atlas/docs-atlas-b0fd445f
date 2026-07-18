@@ -1,0 +1,191 @@
+---
+title: "Troubleshoot Groniz CLI errors and common failures"
+sidebarTitle: "Common Errors"
+description: "Fix the most common Groniz CLI errors: 400 bad request, 401 unauthorized, 413 payload too large, 429 rate limit, upload rejections, and agent credential issues."
+---
+
+Groniz CLI errors fall into three broad categories: HTTP errors returned by the Groniz API, authentication and credential failures that prevent any command from reaching the API, and platform-specific rejections tied to how media or channel settings are validated. Understanding which layer the error comes from narrows down the fix quickly — most failures have a clear root cause and a one-step resolution.
+
+## HTTP error reference
+
+<AccordionGroup>
+  <Accordion title="400 Bad Request">
+    The API rejected the request because the body or a path parameter did not match the expected shape. Common causes include an unrecognised enum value, a field with the wrong type, or a missing required field.
+
+    **How to fix:** Run `groniz integrations settings <channel-id>` to see the exact required fields and accepted values for that channel. Use its output as the source of truth rather than hardcoding platform assumptions.
+
+    ```bash
+    groniz integrations settings <channel-id>
+    ```
+
+    If you are posting with `--json`, double-check that the payload shape matches exactly — see [Strict JSON mode](#agent-specific-traps) below.
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    The `Authorization` header was missing or the API key was not recognised. This usually means no credentials are stored, the stored key has been revoked, or an `export`-based key did not survive across shells.
+
+    **How to check:**
+
+    ```bash
+    groniz whoami
+    ```
+
+    If this returns an error or shows no account, re-authenticate:
+
+    ```bash
+    groniz auth login
+    ```
+
+    Stored credentials are written to `~/.groniz/credentials.json` and persist across shells and agent sessions. An `export GRONIZ_API_KEY=...` in the current shell does not.
+  </Accordion>
+
+  <Accordion title="403 Forbidden">
+    The API key is valid but does not own the resource you are trying to access or modify. This typically happens when a key from one workspace tries to read or write a post, channel, or release that belongs to a different workspace.
+
+    **How to fix:** Confirm the resource ID belongs to the authenticated account with `groniz whoami`, and ensure you are using the correct API key for the target workspace.
+  </Accordion>
+
+  <Accordion title="404 Not Found">
+    Either the endpoint path does not exist, or the path parameter is the right format but no matching row was found in the database.
+
+    **DELETE endpoints:** A 404 on a DELETE request means the resource was already deleted. This is safe to ignore — the end state (resource absent) is what you wanted.
+
+    For all other methods, verify that the ID or slug was copied correctly and that the resource has not been deleted by another process.
+  </Accordion>
+
+  <Accordion title="413 Payload Too Large">
+    The request body exceeded the 50 MB limit on the `/posts` endpoint. This almost always means one or more images were base64-encoded and inlined directly into the request body instead of being pre-uploaded.
+
+    **How to fix:** Use `groniz upload` to upload the file first, then pass the `.path` value from the response into your post command. See [Upload errors](#upload-errors) below for the full workflow.
+  </Accordion>
+
+  <Accordion title="429 Too Many Requests">
+    You have exceeded the rate limit on the create-post endpoint (90 requests per hour on self-hosted; 100 on cloud). The limit is global across your workspace — it is not tiered by plan. Plans instead tier on the number of connected channels and your monthly post quota.
+
+    **How to work around it:** Schedule multiple posts in a single request rather than one request per post. This lets you stay well within the hourly cap even for large batches.
+
+    ```bash
+    # Schedule several posts at once instead of looping
+    groniz posts create \
+      --channel <id1> --message "First post" --schedule-at "2025-08-01T09:00:00Z" \
+      --channel <id2> --message "Second post" --schedule-at "2025-08-01T10:00:00Z"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Upload errors
+
+<Warning>
+  Raw file paths and external URLs are rejected server-side. Always run `groniz upload` first and use the `.path` value from the response — never pass a local file path or a remote URL directly to a post command.
+</Warning>
+
+Two upload mistakes produce silent rejections or confusing 400 errors:
+
+**Raw file path used instead of upload path**
+
+Passing a local path like `./photo.jpg` or `/tmp/image.png` directly to `--media` is not supported. The API does not accept file system paths.
+
+**External URL used instead of upload path**
+
+Passing a public URL (for example, `https://example.com/image.jpg`) is also rejected. The API requires files to be pre-uploaded through Groniz's own storage.
+
+**Correct workflow:**
+
+```bash
+# 1. Upload the file and capture the response
+UPLOAD=$(groniz upload ./photo.jpg --json)
+
+# 2. Extract the path from the response
+MEDIA_PATH=$(echo "$UPLOAD" | jq -r '.path')
+
+# 3. Pass the path to your post command
+groniz posts create --channel <id> --message "Caption" --media "$MEDIA_PATH"
+```
+
+<Tip>
+  Run `echo "$UPLOAD" | jq '.'` first to inspect the full upload response shape before extracting fields. The exact key names can vary — `.path` is standard, but double-checking avoids a 400 from passing `null`.
+</Tip>
+
+## Authentication errors
+
+<Warning>
+  In agent sessions, `export GRONIZ_API_KEY=...` does not persist. Use `groniz auth login` or add the key to your shell profile. Agents that rely on `export` will lose credentials between tool calls and receive 401 errors.
+</Warning>
+
+**"Credentials not found" or persistent 401 errors**
+
+If commands consistently return 401 even after setting `GRONIZ_API_KEY`, the variable may not be reaching the process, or the stored credentials file is missing.
+
+Run `groniz whoami` to check the current authentication state:
+
+```bash
+groniz whoami
+```
+
+**Export vs. stored credentials**
+
+| Method | Persists across shells? | Persists across agent sessions? |
+|---|---|---|
+| `export GRONIZ_API_KEY=...` | No | No |
+| `groniz auth login` | Yes | Yes |
+| Shell profile (`~/.bashrc`, `~/.zshrc`) | Yes | Yes |
+
+**Fix:**
+
+```bash
+# Interactive login — writes to ~/.groniz/credentials.json
+groniz auth login
+
+# Or add to your shell profile for non-interactive environments
+echo 'export GRONIZ_API_KEY=your_key_here' >> ~/.bashrc
+source ~/.bashrc
+```
+
+## Agent-specific traps
+
+These issues are common when a coding agent drives the CLI and are not always obvious from the error messages alone.
+
+**Strict JSON mode shape errors**
+
+When you pass `--json` to any command, the payload must match the exact expected shape. An extra field, a wrong type, or a missing required key will produce a 400. Before constructing a `--json` payload programmatically, verify the shape against `groniz integrations settings <id>` or the API reference.
+
+<Tip>
+  Pipe any JSON output through `jq '.'` first to inspect the actual structure. Key paths differ between commands — for example, the post ID lives at a different path in `posts create` vs `posts list` output.
+</Tip>
+
+**Thread chaining: repeat `-c`, not a JSON array**
+
+To post a thread, repeat the `-c` flag for each post in the thread. Passing a JSON array to a single `-c` flag is not supported and will produce a validation error.
+
+```bash
+# Correct — repeat -c for each post
+groniz posts create --channel <id> \
+  -c "First post in thread" \
+  -c "Second post in thread" \
+  -c "Third post in thread"
+
+# Wrong — JSON array is not accepted
+groniz posts create --channel <id> -c '["First", "Second", "Third"]'
+```
+
+**Draft mode skips validation**
+
+Using `--draft` bypasses all server-side validation, including required field checks. A draft can be saved successfully even if it is missing fields that would cause a 400 on publish. Required fields will only be caught when you later call publish on the draft.
+
+<Warning>
+  Do not use `--draft` as a way to test whether a payload is valid — it will pass even if the post would fail at publish time. Use a scheduled time in the future if you need a non-destructive dry run.
+</Warning>
+
+**Missing release ID → no analytics**
+
+Posts created as drafts, or posts created before the release ID feature was introduced, may have no release ID attached. Without a release ID, analytics data is unavailable for that post.
+
+**Fix workflow:**
+
+```bash
+# 1. Find posts with no release ID
+groniz posts missing <release-id>
+
+# 2. Connect them to the release
+groniz posts connect <post-id> <release-id>
+```

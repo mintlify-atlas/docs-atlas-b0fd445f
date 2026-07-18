@@ -1,0 +1,132 @@
+---
+title: "Upload media before posting with groniz upload"
+sidebarTitle: "Media Upload"
+description: "Upload images and video with groniz upload before referencing them in posts. Raw paths and external URLs are rejected — only uploaded .path values are accepted."
+---
+
+Before you can attach media to a post, you must upload it through `groniz upload`. The Groniz server validates every media reference at post-creation time — raw local file paths and external URLs are rejected outright. The upload step returns a JSON object with an `id` and a `path`; only that `path` value is accepted in the post's image array.
+
+## Upload a local file
+
+Pass the path to any local file to `groniz upload`. The command returns a JSON object with the `id` and `path` you'll use in your post.
+
+```bash
+groniz upload ./image.jpg
+```
+
+Example response:
+
+```json
+{
+  "id": "img_7a2b3c4d",
+  "path": "https://cdn.groniz.com/uploads/img_7a2b3c4d/image.jpg"
+}
+```
+
+### Upload response fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Unique identifier for the uploaded asset |
+| `path` | string | The CDN URL to reference in your post's image array |
+
+<Warning>
+  Do **not** pass raw file paths (e.g. `./photo.jpg`) or external URLs (e.g. `https://example.com/img.jpg`) directly into a post. The server rejects them with a **400 error**. You must run `groniz upload` first and use the `.path` value from the response.
+</Warning>
+
+---
+
+## Using the upload path in a post
+
+After uploading, include the `id` and `path` from the response in your post's image array using the `--json` flag for a full JSON payload:
+
+```json
+[{"id": "img_7a2b3c4d", "path": "https://cdn.groniz.com/uploads/img_7a2b3c4d/image.jpg"}]
+```
+
+Here's what a complete post creation command looks like with an image attached:
+
+```bash
+groniz posts create \
+  -c "Check out this image!" \
+  -i "integration-id" \
+  --json '{"images": [{"id": "img_7a2b3c4d", "path": "https://cdn.groniz.com/uploads/img_7a2b3c4d/image.jpg"}]}'
+```
+
+---
+
+## Complete upload-to-post workflow
+
+<Steps>
+  <Step title="Upload the file">
+    Run `groniz upload` with your local file path and capture the JSON response:
+
+    ```bash
+    groniz upload ./photo.jpg
+    ```
+
+    Response:
+
+    ```json
+    {
+      "id": "img_7a2b3c4d",
+      "path": "https://cdn.groniz.com/uploads/img_7a2b3c4d/photo.jpg"
+    }
+    ```
+  </Step>
+  <Step title="Copy the .path from the response">
+    Note the `path` value — this is the URL you'll reference in your post. Do not use the original local file path.
+
+    <Tip>
+      Use `jq` to extract the path automatically into a shell variable so you can reference it directly in the next step:
+
+      ```bash
+      IMG_PATH=$(groniz upload ./photo.jpg | jq -r '.path')
+      IMG_ID=$(groniz upload ./photo.jpg | jq -r '.id')
+      ```
+
+      Or capture both fields in one upload call:
+
+      ```bash
+      UPLOAD=$(groniz upload ./photo.jpg)
+      IMG_PATH=$(echo "$UPLOAD" | jq -r '.path')
+      IMG_ID=$(echo "$UPLOAD" | jq -r '.id')
+      ```
+    </Tip>
+  </Step>
+  <Step title="Create the post with the image path">
+    Reference the `id` and `path` from the upload response in the post payload:
+
+    ```bash
+    groniz posts create \
+      -c "Here's a photo from today!" \
+      -i "instagram-integration-id" \
+      --json "{\"images\": [{\"id\": \"$IMG_ID\", \"path\": \"$IMG_PATH\"}]}"
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Uploading from a URL
+
+Groniz also supports uploading media directly from a remote URL, which saves you from downloading the file locally first:
+
+```bash
+groniz upload "https://example.com/source-image.jpg"
+```
+
+The response format is identical — you'll receive an `id` and a `path` to use in your post. The same rule applies: use the returned `.path`, not the original source URL.
+
+---
+
+## Supported file types
+
+| Category | Formats |
+|---|---|
+| Images | `jpg`, `png`, `gif`, `webp` |
+| Video | `mp4` |
+
+<Note>
+  Platform-specific restrictions may apply on top of Groniz's accepted types. For example, Instagram and TikTok have aspect ratio and duration requirements for video. Check `groniz integrations settings <id>` for the channel you're posting to before uploading.
+</Note>

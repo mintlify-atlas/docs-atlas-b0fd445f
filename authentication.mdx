@@ -1,0 +1,97 @@
+---
+title: "Authenticate the Groniz CLI with OAuth2 or API keys"
+sidebarTitle: "Authentication"
+description: "Set up persistent credentials for the Groniz CLI using OAuth2 device flow or an API key. Learn which method works best for agents and CI environments."
+---
+
+Every Groniz CLI command communicates with the Groniz API and requires valid credentials before it will do anything. If no credentials are present the command exits immediately with an authentication error. Two methods are supported — OAuth2 device flow and API key — and understanding which one to use matters especially for AI agent workflows, where credentials must survive across multiple shell sessions and agent invocations rather than existing only for the lifetime of a single terminal export.
+
+## Option 1: OAuth2 device flow (recommended)
+
+The OAuth2 device flow is the recommended method for interactive use: local development, personal machines, and agents running in your development environment.
+
+```bash
+groniz auth login
+```
+
+When you run this command, the CLI:
+
+1. Requests a short-lived one-time code from the Groniz authorization server.
+2. Prints the code and a URL in your terminal.
+3. Waits while you open the URL in your browser and approve access.
+4. Exchanges the approved authorization for a token and writes it to `~/.groniz/credentials.json`.
+
+Once saved, the token is read automatically by every subsequent CLI command — no environment variable required.
+
+**Credentials stored at:** `~/.groniz/credentials.json`
+
+**Best for:** interactive sessions, local development, local AI agents (Claude Code, Cursor, etc.)
+
+## Option 2: API key
+
+API keys are better suited to environments where browser-based authorization is not practical: CI/CD pipelines, Docker containers, and headless agents.
+
+### Generate an API key
+
+1. Open the [Groniz Console](https://groniz.com/console/connectors/api-keys).
+2. Navigate to **Settings → API Keys**.
+3. Click **Create API key**, give it a name, and copy the value immediately — it is only shown once.
+
+### Set the environment variable
+
+```bash
+export GRONIZ_API_KEY=your_api_key_here
+```
+
+To make the key available in every new shell session, add the export to your shell profile:
+
+```bash
+# ~/.bashrc or ~/.zshrc
+export GRONIZ_API_KEY=your_api_key_here
+```
+
+**Best for:** CI/CD pipelines, scripts, server-side agents, headless environments.
+
+<Tip>
+  In CI/CD systems (GitHub Actions, GitLab CI, CircleCI, etc.), store your API key as an encrypted secret environment variable rather than hard-coding it in your pipeline configuration. Most platforms surface secrets automatically as environment variables at run time.
+</Tip>
+
+## Credential priority
+
+When both `~/.groniz/credentials.json` and the `GRONIZ_API_KEY` environment variable are present, **OAuth2 credentials take priority**. The API key is used only when no OAuth2 token is found.
+
+| Present | Used |
+| --- | --- |
+| OAuth2 token only | OAuth2 token |
+| API key only | API key |
+| Both | OAuth2 token |
+
+## Managing credentials
+
+### Verify your identity
+
+```bash
+groniz whoami
+```
+
+```json
+{
+  "id": "usr_01hx...",
+  "email": "you@example.com",
+  "name": "Your Name"
+}
+```
+
+Run `groniz whoami` any time you want to confirm which account the CLI is authenticated as, or to verify that credentials were loaded correctly in a new environment.
+
+### Remove stored credentials
+
+```bash
+groniz auth logout
+```
+
+This deletes `~/.groniz/credentials.json`. It does not revoke OAuth2 tokens on the server side — if you need to fully revoke access, do so from the [Groniz Console](https://groniz.com/console/connectors/api-keys).
+
+<Warning>
+  AI agents should always use stored credentials — either OAuth2 (`groniz auth login`) or a shell-profile API key export — rather than inline `export GRONIZ_API_KEY=...` statements inserted mid-session. Inline exports exist only in the agent's current shell process. Across tool calls, sub-shells, or new agent sessions the variable is gone and every subsequent command fails. Store the key in your shell profile or use the device flow before starting an agent session.
+</Warning>

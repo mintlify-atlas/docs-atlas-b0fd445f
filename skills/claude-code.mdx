@@ -1,0 +1,127 @@
+---
+title: "Use Groniz with Claude Code: skill and MCP setup"
+sidebarTitle: "Claude Code"
+description: "Install the Groniz skill for Claude Code in one command, or connect via MCP for tool-based access. Both methods let Claude schedule posts across 32+ channels."
+---
+
+Claude Code is the primary target for the Groniz agent skill. There are two ways to integrate Groniz with Claude Code: the agent skill, which teaches Claude how to drive the Groniz CLI from the command line, and the MCP server, which exposes Groniz as native tools that Claude can call directly. Both methods work independently, and they can be used together.
+
+## Method 1: Agent skill (recommended for most users)
+
+The agent skill is a `SKILL.md` file that Claude Code reads from your project's `.claude/skills/` directory. It covers everything `groniz --help` cannot explain, so Claude can post reliably without trial and error.
+
+### Install
+
+```bash
+npx skills add groniz/groniz-cli
+```
+
+Or target Claude Code explicitly to skip the detection prompt:
+
+```bash
+npx skills add groniz/groniz-cli -a claude-code
+```
+
+The skill file is installed to `.claude/skills/GRONIZ.md` inside your project.
+
+### What Claude learns
+
+Once the skill is installed, Claude understands:
+
+- **Authentication** — run `groniz auth login` once; credentials persist across sessions
+- **Media upload** — always call `groniz upload` first and use the returned `.path` value
+- **Channel settings** — call `groniz integrations settings <id>` to discover required fields and limits before composing a post
+- **Common traps** — strict JSON mode shape, `jq` path differences, thread chaining with `-c`, draft validation bypass, and the missing release ID that blocks analytics
+
+### Try it
+
+After installing the skill and authenticating (see below), try this prompt in Claude Code:
+
+```
+Schedule a post to my X account saying "Launching today 🚀" at 9am tomorrow
+```
+
+Claude will look up your connected channels, check the integration settings, and construct the correct `groniz post` command — including any required fields — without you needing to specify flags manually.
+
+<Tip>
+  Claude Code reads `.claude/skills/` automatically when it starts a session in your project directory. No CLAUDE.md entry or other configuration is required.
+</Tip>
+
+## Method 2: MCP server
+
+The Groniz MCP server exposes your Groniz account as tools that Claude can call directly, without going through the CLI. This is useful when you prefer tool-call-based access or are working in an environment where running shell commands is not ideal.
+
+### Add the MCP server
+
+```bash
+claude mcp add --transport http https://mcp.groniz.com/mcp -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Replace `YOUR_API_KEY` with your Groniz API key. The server uses streamable HTTP transport and requires a valid Bearer token on every request.
+
+This exposes Groniz as tools directly inside Claude — Claude can call them without composing shell commands.
+
+**Requires a paid Claude plan.** The MCP integration is not available on free Claude accounts.
+
+<Note>
+  The skill and MCP can coexist in the same project. When both are active, the skill helps Claude use the CLI correctly for tasks it handles via the terminal, while MCP handles tool-call-based interactions. You do not need to choose one exclusively.
+</Note>
+
+## Authenticating the CLI
+
+Before Claude can run any Groniz command, the CLI needs valid credentials. Run this once in your terminal:
+
+```bash
+groniz auth login
+```
+
+This stores your API token in `~/.groniz/credentials.json`. Claude Code picks up these stored credentials automatically — you do not need to pass an API key on every command.
+
+Alternatively, export your key in your shell profile so it is always available:
+
+```bash
+export GRONIZ_API_KEY=your_api_key_here
+```
+
+Add that line to `~/.zshrc`, `~/.bashrc`, or your preferred shell profile so it persists across terminal sessions and agent restarts.
+
+## Worked example
+
+<Steps>
+  <Step title="Install the skill">
+    Run the following from your project root:
+
+    ```bash
+    npx skills add groniz/groniz-cli -a claude-code
+    ```
+
+    The skill is installed to `.claude/skills/GRONIZ.md`. Commit this file to share the skill with teammates.
+  </Step>
+  <Step title="Authenticate">
+    Run this once in your terminal — you will not need to repeat it:
+
+    ```bash
+    groniz auth login
+    ```
+
+    Follow the prompts. Your token is saved to `~/.groniz/credentials.json` and used automatically by all subsequent `groniz` commands.
+  </Step>
+  <Step title="Ask Claude to list your channels">
+    Open Claude Code in your project and send:
+
+    ```
+    List my connected social channels
+    ```
+
+    Claude will run `groniz integrations list` and summarise the results, including each channel's ID — which you will need for posting.
+  </Step>
+  <Step title="Ask Claude to make a post">
+    Send a natural-language prompt like:
+
+    ```
+    Post "Hello world" to my LinkedIn
+    ```
+
+    Claude will identify your LinkedIn integration ID from the previous step, fetch its settings with `groniz integrations settings <id>`, compose the post command with the correct flags, and execute it.
+  </Step>
+</Steps>

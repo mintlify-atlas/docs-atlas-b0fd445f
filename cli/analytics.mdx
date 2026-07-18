@@ -1,0 +1,143 @@
+---
+title: "Read social media analytics from the Groniz CLI"
+sidebarTitle: "Analytics"
+description: "Use groniz analytics platform and analytics post to retrieve engagement metrics. Analytics availability varies by network — not all platforms report back."
+---
+
+The Groniz CLI can pull engagement metrics for both individual posts and entire channels (integrations). Not every platform exposes analytics — some networks don't provide an API for it at all, and others restrict what's available depending on the account type. This page explains what's available, how to query it, and what to do when analytics aren't showing up.
+
+## Platform analytics
+
+Use `groniz analytics platform` to retrieve metrics for a connected channel over a date range. Pass the integration ID and `--from` / `--to` dates to scope the results.
+
+```bash
+groniz analytics platform \
+  --integration-id "integration-id" \
+  --from "2025-01-01" \
+  --to "2025-01-31"
+```
+
+Example output:
+
+```json
+{
+  "integrationId": "int_x_7a2b3c",
+  "platform": "x",
+  "from": "2025-01-01",
+  "to": "2025-01-31",
+  "metrics": {
+    "impressions": 48200,
+    "likes": 1340,
+    "retweets": 290,
+    "replies": 87,
+    "quotes": 42,
+    "bookmarks": 610
+  }
+}
+```
+
+---
+
+## Post analytics
+
+Use `groniz analytics post` to retrieve metrics for a specific post by its ID.
+
+```bash
+groniz analytics post --post-id "post_abc123"
+```
+
+Example output:
+
+```json
+{
+  "postId": "post_abc123",
+  "platform": "instagram",
+  "metrics": {
+    "views": 5200,
+    "reach": 4100,
+    "likes": 380,
+    "comments": 44,
+    "shares": 61,
+    "saves": 112
+  }
+}
+```
+
+<Tip>
+  Pipe analytics output to `jq` to extract individual metrics without any surrounding structure:
+
+  ```bash
+  groniz analytics post --post-id "post_abc123" | jq '.metrics.impressions'
+  ```
+
+  Or pull multiple values at once:
+
+  ```bash
+  groniz analytics post --post-id "post_abc123" | jq '.metrics | {likes, comments, shares}'
+  ```
+</Tip>
+
+---
+
+## Platform availability
+
+Analytics support varies by network. The table below shows which platforms report metrics and what each one provides.
+
+### Supported platforms
+
+| Platform | Available metrics |
+|---|---|
+| **X** | Impressions, likes, retweets, replies, quotes, bookmarks |
+| **Instagram** | Views, reach, likes, comments, shares, saves |
+| **LinkedIn** | Impressions, engagement *(Pages only — not personal profiles)* |
+| **Facebook** | Impressions, clicks, reactions, engagement |
+| **Threads** | Views, likes, replies, reposts, quotes |
+| **Pinterest** | Impressions, pin clicks, outbound clicks, saves |
+
+### Unsupported platforms
+
+The following platforms do not expose analytics through the API:
+
+| Platform | Status |
+|---|---|
+| Reddit | Not available |
+| Bluesky | Not available |
+| Mastodon | Not available |
+| Discord | Not available |
+| Telegram | Not available |
+
+<Note>
+  For LinkedIn, analytics are only available on **Pages** (`__type: linkedin-page`). Personal LinkedIn profiles (`__type: linkedin`) do not expose engagement data through the API.
+</Note>
+
+---
+
+## Release ID requirement
+
+Analytics commands require the target post to have a **release ID** — the identifier that links the Groniz post record to the published content on the platform. If a post has no release ID, `groniz analytics post` will return no data.
+
+### Check for a missing release ID
+
+Use `groniz posts missing` to list published content from the provider that could be matched to a post with a missing release ID:
+
+```bash
+groniz posts missing <post-id>
+```
+
+### Connect the post to its release ID
+
+Once you've identified the correct match, use `groniz posts connect` to link the post:
+
+```bash
+groniz posts connect
+```
+
+Follow the interactive prompt (or pass flags — run `groniz posts connect --help`) to complete the connection. After connecting, analytics will be available for that post.
+
+<Warning>
+  Posts created with the `--draft` flag skip server-side validation and may not have a release ID assigned when they are eventually published. If analytics are returning empty for a post, check whether it has a release ID and use `posts missing` + `posts connect` to resolve it.
+</Warning>
+
+<Info>
+  For a full walkthrough of the missing release ID flow, see [Posts — Release IDs and analytics](/cli/posts#release-ids-and-analytics).
+</Info>

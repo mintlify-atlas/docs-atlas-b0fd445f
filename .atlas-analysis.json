@@ -1,0 +1,100 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Groniz CLI",
+  "projectDescription": "An agent skill that teaches AI coding agents to drive the Groniz CLI for scheduling social media and chat posts across 32+ channels.",
+  "theme": "luma",
+  "primaryColor": "#ffffff",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guide",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Using the CLI",
+            "pages": [
+              "cli/posts",
+              "cli/integrations",
+              "cli/media-upload",
+              "cli/analytics"
+            ]
+          },
+          {
+            "group": "Agent Skills",
+            "pages": [
+              "skills/overview",
+              "skills/claude-code",
+              "skills/other-agents"
+            ]
+          },
+          {
+            "group": "Troubleshooting",
+            "pages": [
+              "troubleshooting/common-errors",
+              "troubleshooting/known-issues"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Command Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "commands/auth",
+              "commands/posts",
+              "commands/integrations",
+              "commands/analytics",
+              "commands/reads",
+              "commands/upload"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Agent skill for Claude Code, Codex, opencode, Cline, and Cursor",
+    "Self-contained native binary — no Node.js required",
+    "Schedule posts across 32+ social media channels",
+    "OAuth2 device-flow and API key authentication with persistent credentials",
+    "Upload media before posting (required for images/video)",
+    "Runtime integration settings discovery via `integrations:settings`",
+    "JSON output for easy scripting and pipeline integration",
+    "Covers agent-specific traps: strict JSON mode, media upload flow, thread chaining, draft behavior, and missing release IDs"
+  ],
+  "publicApiSurface": [
+    "groniz auth login",
+    "groniz auth logout",
+    "groniz whoami",
+    "groniz integrations list",
+    "groniz integrations settings <id>",
+    "groniz integrations trigger",
+    "groniz posts create -c <content> -s <schedule> -i <integration-id>",
+    "groniz posts list",
+    "groniz posts delete <id>",
+    "groniz posts missing <id>",
+    "groniz posts connect",
+    "groniz upload <file>",
+    "groniz analytics platform",
+    "groniz analytics post",
+    "groniz reads x profile",
+    "groniz reads x posts",
+    "groniz reads x post",
+    "groniz reads x search",
+    "groniz reads x metrics",
+    "groniz update",
+    "groniz update --check"
+  ]
+}

@@ -1,0 +1,154 @@
+---
+title: "groniz posts: create, list, delete, and connect commands"
+sidebarTitle: "posts"
+description: "Full reference for groniz posts create (schedule or post now), list (filter by date), delete (by ID), missing (find release IDs), and connect (link to published content)."
+---
+
+The `groniz posts` command group is the core of the CLI. Use it to create scheduled or immediate posts across any of your connected channels, list existing posts, delete them, and resolve the release-ID link that enables per-post analytics.
+
+## `groniz posts create`
+
+Creates a new post. By default the post is published immediately to every integration you specify. Pass `--schedule` to queue it for a future time, or `--draft` to save it without validation.
+
+<ParamField body="-c, --content" type="string" required>
+  The text content of the post. Repeat the flag once per item to create a thread — each `-c` value becomes one thread post in order.
+</ParamField>
+
+<ParamField body="-s, --schedule" type="string">
+  ISO 8601 datetime at which to publish the post (e.g. `2025-09-01T14:00:00Z`). Omit this flag to post immediately.
+</ParamField>
+
+<ParamField body="-i, --integrations" type="string" required>
+  Integration ID to post to. Repeat the flag or comma-separate multiple IDs to post to more than one channel simultaneously.
+</ParamField>
+
+<ParamField body="--draft" type="boolean">
+  Save the post as a draft. Validation is skipped, so platform-specific requirements (character limits, required settings) are not enforced.
+</ParamField>
+
+<ParamField body="--json" type="boolean">
+  Strict JSON mode. Instead of individual flags, pass the full post payload as a JSON string. Useful when constructing posts programmatically.
+</ParamField>
+
+### Examples
+
+**Immediate post to a single channel**
+
+```bash
+groniz posts create \
+  --content "Hello from the CLI!" \
+  --integrations int_abc123
+```
+
+**Scheduled post**
+
+```bash
+groniz posts create \
+  --content "Launching something big tomorrow 🚀" \
+  --schedule "2025-09-01T09:00:00Z" \
+  --integrations int_abc123
+```
+
+**Multi-channel post**
+
+```bash
+groniz posts create \
+  --content "Cross-posting to X and LinkedIn" \
+  --integrations int_abc123,int_def456
+```
+
+**Thread (repeat `-c` for each post)**
+
+```bash
+groniz posts create \
+  --content "1/ This is the first post in the thread." \
+  --content "2/ Here is more detail in the second post." \
+  --content "3/ And the final post wraps it up." \
+  --integrations int_abc123
+```
+
+**Example output**
+
+```json
+{
+  "id": "post_xyz789",
+  "status": "scheduled",
+  "integrationIds": ["int_abc123"],
+  "scheduledAt": "2025-09-01T09:00:00Z"
+}
+```
+
+## `groniz posts list`
+
+Returns a JSON array of your posts, optionally filtered to a date window.
+
+<ParamField query="--from" type="string">
+  Return only posts created on or after this date (ISO 8601).
+</ParamField>
+
+<ParamField query="--to" type="string">
+  Return only posts created on or before this date (ISO 8601).
+</ParamField>
+
+```bash
+groniz posts list --from 2025-08-01 --to 2025-08-31
+```
+
+**Example output**
+
+```json
+[
+  {
+    "id": "post_xyz789",
+    "status": "published",
+    "content": "Hello from the CLI!",
+    "scheduledAt": null,
+    "publishedAt": "2025-08-15T10:23:00Z",
+    "integrationIds": ["int_abc123"]
+  }
+]
+```
+
+## `groniz posts delete <id>`
+
+Deletes a post by its ID.
+
+```bash
+groniz posts delete post_xyz789
+```
+
+<Note>
+  A `404` response means the post was already deleted. This is safe to ignore — treat it as a successful no-op in automated workflows.
+</Note>
+
+## `groniz posts missing <id>`
+
+When a post was published but Groniz does not have a release ID for it (for example, it was published outside the CLI), analytics are unavailable. This command queries the connected provider and lists the published content that could be linked to that post.
+
+```bash
+groniz posts missing post_xyz789
+```
+
+The output is a JSON array of available published items from the provider, each with an ID you can pass to `groniz posts connect`.
+
+## `groniz posts connect`
+
+Links a Groniz post to its published content using a release ID. Once connected, `groniz analytics post` can return metrics for that post.
+
+<ParamField body="--post-id" type="string" required>
+  The Groniz post ID to link.
+</ParamField>
+
+<ParamField body="--release-id" type="string" required>
+  The release ID returned by `groniz posts missing` that corresponds to the published item.
+</ParamField>
+
+```bash
+groniz posts connect \
+  --post-id post_xyz789 \
+  --release-id rel_provider999
+```
+
+<Tip>
+  The standard recovery flow when analytics are unavailable is: run `groniz posts missing <post-id>` to find candidate release IDs, identify the correct one, then run `groniz posts connect` to establish the link.
+</Tip>
